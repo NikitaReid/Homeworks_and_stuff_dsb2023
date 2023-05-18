@@ -37,25 +37,6 @@ mass_shootings <- read_csv(here::here("data" , "mass_shootings.csv"))
 glimpse(mass_shootings)
 ```
 
-| column(variable)     | description                                                                 |
-|---------------------------|---------------------------------------------|
-| case                 | short name of incident                                                      |
-| year, month, day     | year, month, day in which the shooting occurred                             |
-| location             | city and state where the shooting occcurred                                 |
-| summary              | brief description of the incident                                           |
-| fatalities           | Number of fatalities in the incident, excluding the shooter                 |
-| injured              | Number of injured, non-fatal victims in the incident, excluding the shooter |
-| total_victims        | number of total victims in the incident, excluding the shooter              |
-| location_type        | generic location in which the shooting took place                           |
-| male                 | logical value, indicating whether the shooter was male                      |
-| age_of_shooter       | age of the shooter when the incident occured                                |
-| race                 | race of the shooter                                                         |
-| prior_mental_illness | did the shooter show evidence of mental illness prior to the incident?      |
-
-## Explore the data
-
-### Specific questions
-
 -   Generate a data frame that summarizes the number of mass shootings per year.
 
 ```{r}
