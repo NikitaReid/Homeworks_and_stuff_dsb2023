@@ -11,11 +11,9 @@ format:
 editor: visual
 ---
 
-```{r load-librarie}
-#| label: load-libraries
-#| echo: false # This option disables the printing of code (only output is displayed).
-#| message: false
-#| warning: false
+```{r load-libraries , echo=FALSE , message=FALSE , warning=FALSE}
+
+# load required libraries 
 
 library(tidyverse)
 library(wbstats)
@@ -24,29 +22,23 @@ library(countrycode)
 library(here)
 ```
 
-# Data Visualisation - Exploration
-
-Now that you've demonstrated your software is setup, and you have the basics of data manipulation, the goal of this assignment is to practice transforming, visualising, and exploring data.
+# Data Vizualisation 
 
 # Mass shootings in the US
 
-In July 2012, in the aftermath of a mass shooting in a movie theater in Aurora, Colorado, [Mother Jones](https://www.motherjones.com/politics/2012/07/mass-shootings-map/) published a report on mass shootings in the United States since 1982. Importantly, they provided the underlying data set as [an open-source database](https://www.motherjones.com/politics/2012/12/mass-shootings-mother-jones-full-data/) for anyone interested in studying and understanding this criminal behavior.
+In July 2012, in the aftermath of a mass shooting in a movie theater in Aurora, Colorado, [Mother Jones](https://www.motherjones.com/politics/2012/07/mass-shootings-map/) published a report on mass shootings in the United States since 1982. They provided the underlying data set as [an open-source database](https://www.motherjones.com/politics/2012/12/mass-shootings-mother-jones-full-data/) for anyone interested in studying criminal behavior.
 
-## Obtain the data
+```{r echo=FALSE , message=FALSE , warning=FALSE}
 
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
+# read in and check out the data
 
-
-mass_shootings <- read_csv(here::here("data", "mass_shootings.csv"))
+mass_shootings <- read_csv(here::here("data" , "mass_shootings.csv"))
 
 glimpse(mass_shootings)
 ```
 
 | column(variable)     | description                                                                 |
-|--------------------------|---------------------------------------------|
+|---------------------------|---------------------------------------------|
 | case                 | short name of incident                                                      |
 | year, month, day     | year, month, day in which the shooting occurred                             |
 | location             | city and state where the shooting occcurred                                 |
