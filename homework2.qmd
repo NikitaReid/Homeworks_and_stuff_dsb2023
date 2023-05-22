@@ -158,11 +158,11 @@ mass_shootings %>%
 
 -   How does the distribution of mass shooting fatalities differ between White and Black shooters? What about White and Latino shooters?
 
-    On average (from box plot) the number of fatalities in incidents committed by white shooters is higher than those comitted by both black and latino shooters as well as there being a non-neglible number of extreme cases where white shooters claimed many victims. The trend seems to suggest that fatalities are higher in incidents when white shooters are involved.
+    On average (from box plots) the number of fatalities in incidents committed by white shooters is higher than those comitted by both black and latino shooters as well as there being a non-neglible number of extreme cases where white shooters claimed many victims. The trend seems to suggest that fatalities are higher in incidents when white shooters are involved.
 
 ```{r boxplot-by-races}
 
-# boxplot of total shooting victims by race white vs black 
+# boxplot of total shooting fatalities by race white vs black 
 mass_shootings %>%
   
 # filter for race white or black first then plot 
@@ -171,15 +171,15 @@ mass_shootings %>%
 # filter out the Las Vegas massacre again because it ruins plots!
   filter(case != "Las Vegas Strip massacre") %>% 
   
-  ggplot(aes(x = race, y = total_victims)) + 
+  ggplot(aes(x = race, y = fatalities)) + 
   geom_boxplot() +
 
 # labels
-  labs(title = "Spread of number of victims of a shooting incident \nby white versus black shooters", 
-       x = "Race of shooter", y= "Number of victims")
+  labs(title = "Spread of number of fatalities of a shooting incident \nby white versus black shooters", 
+       x = "Race of shooter", y= "Number of fatalities")
 
 
-# boxplot of total shooting victims by race white vs latino 
+# boxplot of total shooting fatalities by race white vs latino 
 mass_shootings %>%
   
 # filter for race white or latino first then plot 
@@ -188,30 +188,88 @@ mass_shootings %>%
 # filter out the Las Vegas massacre again because it ruins plots!
   filter(case != "Las Vegas Strip massacre") %>% 
   
-  ggplot(aes(x = race, y = total_victims)) + 
+  ggplot(aes(x = race, y = fatalities)) + 
   geom_boxplot() +
 
 # labels
-  labs(title = "Spread of number of victims of a shooting incident \nby white versus latino shooters", 
-       x = "Race of shooter", y= "Number of victims")
+  labs(title = "Spread of number of fatalities of a shooting incident \nby white versus latino shooters", 
+       x = "Race of shooter", y= "Number of fatalities")
 
 ```
 
-### Very open-ended
-
 -   Are mass shootings with shooters suffering from mental illness different from mass shootings with no signs of mental illness in the shooter?
 
-```{r}
+    In general, from box plot, shooters with a prior mental illness documented tend to harm more victims in a shooting, on average and in extreme outlying cases. Furthermore, from bar chart, shooters with a history of mental illness tend to engage in shootings at all types of locations, far more frequently than shooters without a history of mental illness. This probably makes sense, as these people tend to be erratic, and their motivations for violence are often not rational or true to any type of pattern. Shooters with no mental history only shot at schools, workplaces or other locations. This seems to suggest more "explainable" motives such as a vendetta against former coworkers or schoolmates.
+
+```{r investigating-mental-illness}
+
+# first let's investigate where these shootings take place 
+ mass_shootings %>% 
+   
+# remove missing values to investigate prior mental illness 
+   drop_na(prior_mental_illness) %>% 
+   
+# collect values by location type and history of mental illness 
+   group_by(location_type, prior_mental_illness) %>% 
+   count() %>% 
+   
+# plot separate side by side bars by location type 
+# for shooters with and without a history of mental illness 
+   ggplot(aes(x = n, y = location_type, 
+              fill= prior_mental_illness)) + 
+   geom_bar(stat="identity",position ="dodge") +
+   
+   labs(title = "Relationship between shooting location types \nand the mental history of the shooter involved",
+        x = "Number of incidents", y = "Type of location",
+        fill = "History of mental illness?")
+
+ 
+# next let's investigate how number of victims relate to mental illness
+mass_shootings %>% 
+   
+# remove missing values to investigate prior mental illness 
+  drop_na(prior_mental_illness) %>% 
+   
+# plot boxplot to see distribution of victims by mental history  
+  ggplot(aes(x = prior_mental_illness, y = total_victims)) +
+  geom_boxplot() +
+   
+  labs(title = "Relationship between number of shooting victims \nand the mental history of the shooter involved",
+      x = "History of mental illness?", 
+      y = "Number of shooting victims")
 
 ```
 
 -   Assess the relationship between mental illness and total victims, mental illness and location type, and the intersection of all three variables.
 
-```{r}
+    I have already investigated the relationship between mental illness and total victims, mental illness and location type above as these seemed to be the best variables to analyse the difference in shootings based on history of mental illness. No other variables were particularly interesting. So, see above.
+
+    Now, let's examine the intersection between all three variables:
+
+    Along with the above, it is clear that, across all locations, shooters with a history of mental illness harm far more victims.
+
+```{r investigating-mental-illness-2}
+
+# investigate this with bar chart with some colour for third dimension 
+ mass_shootings %>% 
+   
+# remove missing values to investigate prior mental illness 
+   drop_na(prior_mental_illness) %>% 
+   
+# plot stacked bars by location type against number of victims
+# for shooters with and without a history of mental illness 
+   ggplot(aes(x = total_victims, y = location_type, 
+              fill= prior_mental_illness)) + 
+   geom_bar(stat="identity") +
+   
+   labs(title = "Relationship between shooting location types,
+        \nnumber of shooting victims
+        \nand the mental history of the shooter involved",
+        x = "Total number of shooting victims", 
+        y = "Type of location",
+        fill = "History of mental illness?")
 
 ```
-
-Make sure to provide a couple of sentences of written interpretation of your tables/figures. Graphs and tables alone will not be sufficient to answer this question.
 
 # Exploring credit card fraud
 
