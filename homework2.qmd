@@ -273,44 +273,16 @@ mass_shootings %>%
 
 # Exploring credit card fraud
 
-We will be using a dataset with credit card transactions containing legitimate and fraud transactions. Fraud is typically well below 1% of all transactions, so a naive model that predicts that all transactions are legitimate and not fraudulent would have an accuracy of well over 99%-- pretty good, no? (well, not quite as we will see later in the course)
-
-You can read more on credit card fraud on [Credit Card Fraud Detection Using Weighted Support Vector Machine](https://www.scirp.org/journal/paperinformation.aspx?paperid=105944)
-
 The dataset we will use consists of credit card transactions and it includes information about each transaction including customer details, the merchant and category of purchase, and whether or not the transaction was a fraud.
 
-## Obtain the data
+```{r read-data, echo=FALSE, message=FALSE, warning=FALSE}
 
-The dataset is too large to be hosted on Canvas or Github, so please download it from dropbox https://www.dropbox.com/sh/q1yk8mmnbbrzavl/AAAxzRtIhag9Nc_hODafGV2ka?dl=0 and save it in your `dsb` repo, under the `data` folder
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
+# read in and check out the data 
 
 card_fraud <- read_csv(here::here("data", "card_fraud.csv"))
 
 glimpse(card_fraud)
 ```
-
-The data dictionary is as follows
-
-| column(variable)      | description                                 |
-|-----------------------|---------------------------------------------|
-| trans_date_trans_time | Transaction DateTime                        |
-| trans_year            | Transaction year                            |
-| category              | category of merchant                        |
-| amt                   | amount of transaction                       |
-| city                  | City of card holder                         |
-| state                 | State of card holder                        |
-| lat                   | Latitude location of purchase               |
-| long                  | Longitude location of purchase              |
-| city_pop              | card holder's city population               |
-| job                   | job of card holder                          |
-| dob                   | date of birth of card holder                |
-| merch_lat             | Latitude Location of Merchant               |
-| merch_long            | Longitude Location of Merchant              |
-| is_fraud              | Whether Transaction is Fraud (1) or Not (0) |
 
 -   In this dataset, how likely are fraudulent transactions? Generate a table that summarizes the number and frequency of fraudulent transactions per year.
 
