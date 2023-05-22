@@ -384,15 +384,61 @@ card_fraud %>%
 
 ```
 
--   When is fraud more prevalent? Which days, months, hours? To create new variables to help you in your analysis, we use the `lubridate` package and the following code
+-   When is fraud more prevalent? Which days, months, hours?
 
-```         
+```{r time-of-fraud}
+
+# use lubridate to create some new variables 
+# to investigate which days/months/hours have increased fraud 
+# and save them in a new data frame for plotting 
+new_card_fraud <- card_fraud %>% 
 mutate(
   date_only = lubridate::date(trans_date_trans_time),
   month_name = lubridate::month(trans_date_trans_time, label=TRUE),
   hour = lubridate::hour(trans_date_trans_time),
   weekday = lubridate::wday(trans_date_trans_time, label = TRUE)
-  )
+  ) 
+
+# plot bar graph to investigate fraud by day of the week 
+new_card_fraud %>% 
+  
+# filter only for fraudulent transactions
+  filter(is_fraud==1) %>% 
+  
+# count number of transactions of fraud by weekday 
+  group_by(weekday) %>% 
+  count() %>% 
+  
+# plot bars for weekdays 
+  ggplot(aes(x = weekday, y = n)) + 
+  geom_bar(stat="identity") +
+  
+# add some text to show count of transactions for each day 
+  geom_text(aes(label = n, y= n - 10), 
+            colour = "white", size = 4 , vjust = 2) +
+  labs(x='', y='', 
+       title = "Number of occurences of fraud by weekday")
+  
+
+# plot bar graph to investigate fraud by month of the year 
+new_card_fraud %>% 
+  
+# filter only for fraudulent transactions
+  filter(is_fraud==1) %>% 
+  
+# count number of transactions of fraud by month 
+  group_by(month_name) %>% 
+  count() %>% 
+  
+# plot bars for months 
+  ggplot(aes(x = month_name, y = n)) + 
+  geom_bar(stat="identity") +
+  
+# add some text to show count of transactions for each month 
+  geom_text(aes(label = n, y= n - 10), 
+            colour = "white", size = 4 , vjust = 2) +
+  labs(x='', y='', 
+       title = "Number of occurences of fraud by month")
 ```
 
 -   Are older customers significantly more likely to be victims of credit card fraud? To calculate a customer's age, we use the `lubridate` package and the following code
