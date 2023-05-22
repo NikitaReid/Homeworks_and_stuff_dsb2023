@@ -475,14 +475,13 @@ card_fraud %>%
   arrange(desc(n))
 ```
 
--   Is fraud related to distance? The distance between a card holder's home and the location of the transaction can be a feature that is related to fraud. To calculate distance, we need the latidue/longitude of card holders's home and the latitude/longitude of the transaction, and we will use the [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) to calculate distance. I adapted code to [calculate distance between two points on earth](https://www.geeksforgeeks.org/program-distance-two-points-earth/amp/) which you can find below
+-   Is fraud related to distance? There seems to be (from violin plot) absolutely no relationship between the distance between the cardholders' home and the transaction location and whether fraudulent activity occurs. This is not a useful data factor to explain fraud.
 
 ```{r}
 # distance between card holder's home and transaction
 # code adapted from https://www.geeksforgeeks.org/program-distance-two-points-earth/amp/
 
-
-fraud <- fraud %>%
+fraud <- card_fraud %>%
   mutate(
     
     # convert latitude/longitude to radians
@@ -495,13 +494,24 @@ fraud <- fraud %>%
     distance_miles = 3963.0 * acos((sin(lat1_radians) * sin(lat2_radians)) + cos(lat1_radians) * cos(lat2_radians) * cos(long2_radians - long1_radians)),
 
     # calculate distance in km
-    distance_km = 6377.830272 * acos((sin(lat1_radians) * sin(lat2_radians)) + cos(lat1_radians) * cos(lat2_radians) * cos(long2_radians - long1_radians))
+    distance_km = 6377.830272 * acos((sin(lat1_radians) * sin(lat2_radians)) + cos(lat1_radians) * cos(lat2_radians) * cos(long2_radians - long1_radians)))  
 
-  )
+
+# create new column to turn is_fraud into characters 
+fraud %>% 
+  mutate(is_fraud_new= as.character(is_fraud)) %>% 
+  
+# violin plot
+  ggplot(aes(x = is_fraud_new, y=distance_km)) +
+         geom_violin() + 
+# label fraud categories 
+  scale_x_discrete(labels= c("Legitimate","Fraudulent")) +
+  
+  labs(x='', y = "Distance / km" , 
+       title = "Is fraudulent activity affected by distance between \ncardholder's home and transaction location")
+
 
 ```
-
-Plot a boxplot or a violin plot that looks at the relationship of distance and `is_fraud`. Does distance seem to be a useful feature in explaining fraud?
 
 # Exploring sources of electricity production, CO2 emissions, and GDP per capita.
 
