@@ -22,31 +22,59 @@ library(countrycode)
 library(here)
 ```
 
-# Data Vizualisation 
+# Data Visualisation
 
 # Mass shootings in the US
 
 In July 2012, in the aftermath of a mass shooting in a movie theater in Aurora, Colorado, [Mother Jones](https://www.motherjones.com/politics/2012/07/mass-shootings-map/) published a report on mass shootings in the United States since 1982. They provided the underlying data set as [an open-source database](https://www.motherjones.com/politics/2012/12/mass-shootings-mother-jones-full-data/) for anyone interested in studying criminal behavior.
 
-```{r echo=FALSE , message=FALSE , warning=FALSE}
+```{r load-data echo=FALSE , message=FALSE , warning=FALSE}
 
 # read in and check out the data
 
-mass_shootings <- read_csv(here::here("data" , "mass_shootings.csv"))
+mass_shootings <- read_csv(here::here("data" , "mass_shootings.csv"), show_col_types = FALSE)
 
 glimpse(mass_shootings)
 ```
 
 -   Generate a data frame that summarizes the number of mass shootings per year.
 
-```{r}
+```{r number-shootings-year}
 
+# create new dataframe 
+
+number_shootings <- mass_shootings %>% 
+  
+# group by year and count the number of shooitngs in each 
+  group_by(year) %>% 
+  count()
+
+number_shootings
 ```
 
 -   Generate a bar chart that identifies the number of mass shooters associated with each race category. The bars should be sorted from highest to lowest and each bar should show its number.
 
-```{r}
+```{r number-shootings-race}
 
+# remove missing values
+mass_shootings %>%
+  drop_na(race) %>% 
+
+# count the frequency of different races 
+  count(race) %>%
+  
+# arrange races in order
+  mutate(race = fct_reorder(race,n)) %>%
+
+# plot bar chart
+  ggplot(aes(x = n, y = race)) + 
+  geom_bar(stat = "identity") +
+
+# add text for count to each bar
+  geom_text(aes(label = n, x = n - 0.5), 
+            colour = "white", size = 4 , hjust = 1) +
+  labs(title = "Number of mass shooters by race category"
+       , x ="", y ="")
 ```
 
 -   Generate a boxplot visualizing the number of total victims, by type of location.
