@@ -133,13 +133,23 @@ mass_shootings %>%
 ```{r month-most-shootings}
 
 mass_shootings %>% 
+  
+# count mass shootings for each month 
   group_by(month) %>% 
   count() %>% 
+  
+# plot bar chart 
   ggplot(aes(x = month, y = n)) + 
   geom_bar(stat = "identity") +
+  
+# fix x scale to put months in natural order 
   scale_x_discrete(limits= month.abb) +
+  
+# add text to bars to show number of shootings for each month
   geom_text(aes(label = n, y= n - 0.5), 
             colour = "white", size = 4 , vjust = 1) +
+  
+# don't need axis labels here 
   labs(title = "Number of mass shootings by month"
        , x ="", y ="")
   
@@ -148,7 +158,42 @@ mass_shootings %>%
 
 -   How does the distribution of mass shooting fatalities differ between White and Black shooters? What about White and Latino shooters?
 
-```{r}
+    On average (from box plot) the number of fatalities in incidents committed by white shooters is higher than those comitted by both black and latino shooters as well as there being a non-neglible number of extreme cases where white shooters claimed many victims. The trend seems to suggest that fatalities are higher in incidents when white shooters are involved.
+
+```{r boxplot-by-races}
+
+# boxplot of total shooting victims by race white vs black 
+mass_shootings %>%
+  
+# filter for race white or black first then plot 
+  filter(race=="White"| race=="Black") %>% 
+  
+# filter out the Las Vegas massacre again because it ruins plots!
+  filter(case != "Las Vegas Strip massacre") %>% 
+  
+  ggplot(aes(x = race, y = total_victims)) + 
+  geom_boxplot() +
+
+# labels
+  labs(title = "Spread of number of victims of a shooting incident \nby white versus black shooters", 
+       x = "Race of shooter", y= "Number of victims")
+
+
+# boxplot of total shooting victims by race white vs latino 
+mass_shootings %>%
+  
+# filter for race white or latino first then plot 
+  filter(race=="White"| race=="Latino") %>% 
+  
+# filter out the Las Vegas massacre again because it ruins plots!
+  filter(case != "Las Vegas Strip massacre") %>% 
+  
+  ggplot(aes(x = race, y = total_victims)) + 
+  geom_boxplot() +
+
+# labels
+  labs(title = "Spread of number of victims of a shooting incident \nby white versus latino shooters", 
+       x = "Race of shooter", y= "Number of victims")
 
 ```
 
