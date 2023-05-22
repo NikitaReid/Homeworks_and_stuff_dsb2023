@@ -273,7 +273,7 @@ mass_shootings %>%
 
 # Exploring credit card fraud
 
-The dataset we will use consists of credit card transactions and it includes information about each transaction including customer details, the merchant and category of purchase, and whether or not the transaction was a fraud.
+The data set we will use consists of credit card transactions and it includes information about each transaction including customer details, the merchant and category of purchase, and whether or not the transaction was a fraud.
 
 ```{r read-data, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -319,13 +319,68 @@ card_fraud %>%
 
 -   Generate a histogram that shows the distribution of amounts charged to credit card, both for legitimate and fraudulent accounts. Also, for both types of transactions, calculate some quick summary statistics.
 
-```{r}
+```{r amount-distributions, warning=FALSE}
 
+# some quick summary stats using summarize 
+# group by fraud versus legitimate 
+card_fraud %>% 
+  group_by(is_fraud) %>% 
+# calculate summary stats of amounts for each
+  summarize(mean_amount= mean(amt), 
+            median_amount = median(amt), 
+            minimum_amount = min(amt), 
+            maximum_amount = max(amt))
+
+# now plot histograms 
+card_fraud %>%
+# first only fraudulent transactions
+  filter(is_fraud==1) %>% 
+# plot distribution - make bins look as good as possible 
+  ggplot(aes(x = amt)) +
+  geom_histogram(bins=60) +
+
+  labs(title = "Distribution of transactions amounts
+       \nof fraudulent transactions", 
+       x = "Transaction amount / $", y="")
+
+# now plot histograms 
+card_fraud %>%
+# next only legitimate transactions
+  filter(is_fraud==0) %>% 
+# plot distribution - make bins look as good as possible 
+  ggplot(aes(x = amt)) +
+  geom_histogram(bins=100) + 
+# take out large amount outliers for this purpose so the graph looks decent 
+  scale_x_continuous(limits= c(1,500)) +
+  
+  labs(title = "Distribution of transactions amounts
+       \nof legitimate transactions", 
+       x = "Transaction amount / $", y="")
 ```
 
 -   What types of purchases are most likely to be instances of fraud? Consider category of merchants and produce a bar chart that shows % of total fraudulent transactions sorted in order.
 
-```{r}
+```{r merchants-fraud}
+
+card_fraud %>% 
+# filter for only farud transactions
+  filter(is_fraud==1) %>% 
+  
+# count them by category and rearrange bars based on count
+  count(category) %>% 
+  mutate(category = fct_reorder(category,n)) %>%
+  
+# calculate percentage of fraud by catgeory of merchant 
+  mutate(percentage = n/sum(n)*100) %>% 
+  
+# plot categories of fraud percentage frequency
+  ggplot(aes(y=category, x=percentage)) + 
+  geom_bar(stat = "identity") +
+  labs(title="Percentage of fraudulent transactions 
+       \nby type of merchant", 
+       x = "Percentage of transactions",
+       y = "Type of merchant")
+  
 
 ```
 
