@@ -277,22 +277,43 @@ The dataset we will use consists of credit card transactions and it includes inf
 
 ```{r read-data, echo=FALSE, message=FALSE, warning=FALSE}
 
-# read in and check out the data 
+# read in the data 
 
 card_fraud <- read_csv(here::here("data", "card_fraud.csv"))
 
-glimpse(card_fraud)
 ```
 
--   In this dataset, how likely are fraudulent transactions? Generate a table that summarizes the number and frequency of fraudulent transactions per year.
+-   In this data set, how likely are fraudulent transactions? Generate a table that summarizes the number and frequency of fraudulent transactions per year. Approximately 0.6% of transactions were fraudulent in both 2019 and 2020.
 
-```{r}
+```{r fraud-likelihood}
+
+# group transactions by year 
+card_fraud %>% 
+  group_by(trans_year) %>% 
+# count number of fraudulent and non- fraudulent transactions 
+  count(is_fraud) %>% 
+# calculate variable for frequency of fraud 
+  mutate(frequency_percentage = n/sum(n) *100) %>% 
+  
+# filter and display on data for fraudulent transactions in table
+  filter(is_fraud==1)
 
 ```
 
 -   How much money (in US\$ terms) are fraudulent transactions costing the company? Generate a table that summarizes the total amount of legitimate and fraudulent transactions per year and calculate the % of fraudulent transactions, in US\$ terms.
 
-```{r}
+```{r cost-of-fraud, message=FALSE}
+
+# group transactions by year and fraud status
+card_fraud %>% 
+  group_by(trans_year, is_fraud) %>%
+  
+# calculate total dollar amount for each fraud group and year 
+  summarize(total_amount_dollars = sum(amt)) %>% 
+  
+# calculate percentage of total amount for each fraud group 
+  mutate(percentage_dollars = 
+           total_amount_dollars/sum(total_amount_dollars)*100)
 
 ```
 
@@ -443,21 +464,3 @@ Specific questions:
 # Deliverables
 
 There is a lot of explanatory text, comments, etc. You do not need these, so delete them and produce a stand-alone document that you could share with someone. Knit the edited and completed Quarto Markdown (qmd) file as a Word document (use the "Render" button at the top of the script editor window) and upload it to Canvas. You must be commiting and pushing tour changes to your own Github repo as you go along.
-
-# Details
-
--   Who did you collaborate with: TYPE NAMES HERE
--   Approximately how much time did you spend on this problem set: ANSWER HERE
--   What, if anything, gave you the most trouble: ANSWER HERE
-
-**Please seek out help when you need it,** and remember the [15-minute rule](https://mam2022.netlify.app/syllabus/#the-15-minute-rule){target="_blank"}. You know enough R (and have enough examples of code from class and your readings) to be able to do this. If you get stuck, ask for help from others, post a question on Slack-- and remember that I am here to help too!
-
-> As a true test to yourself, do you understand the code you submitted and are you able to explain it to someone else?
-
-# Rubric
-
-13/13: Problem set is 100% completed. Every question was attempted and answered, and most answers are correct. Code is well-documented (both self-documented and with additional comments as necessary). Used tidyverse, instead of base R. Graphs and tables are properly labelled. Analysis is clear and easy to follow, either because graphs are labeled clearly or you've written additional text to describe how you interpret the output. Multiple Github commits. Work is exceptional. I will not assign these often.
-
-8/13: Problem set is 60--80% complete and most answers are correct. This is the expected level of performance. Solid effort. Hits all the elements. No clear mistakes. Easy to follow (both the code and the output). A few Github commits.
-
-5/13: Problem set is less than 60% complete and/or most answers are incorrect. This indicates that you need to improve next time. I will hopefully not assign these often. Displays minimal effort. Doesn't complete all components. Code is poorly written and not documented. Uses the same type of plot for each graph, or doesn't use plots appropriate for the variables being analyzed. No Github commits.
