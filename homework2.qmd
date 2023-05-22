@@ -111,19 +111,38 @@ mass_shootings %>%
 
 ```
 
-### More open-ended questions
+-   How many white males with prior signs of mental illness initiated a mass shooting after 2000? 22
 
-Address the following questions. Generate appropriate figures/tables to support your conclusions.
+```{r prior-mental-illness}
 
--   How many white males with prior signs of mental illness initiated a mass shooting after 2000?
-
-```{r}
+mass_shootings %>% 
+  
+# filter for incident happening after 2000
+  filter(year>2000) %>% 
+# filter for male and white and prior mental illness 
+  filter(male==TRUE & 
+           race=="White" & 
+           prior_mental_illness=="Yes") %>% 
+# count them 
+  count()
 
 ```
 
--   Which month of the year has the most mass shootings? Generate a bar chart sorted in chronological (natural) order (Jan-Feb-Mar- etc) to provide evidence of your answer.
+-   Which month of the year has the most mass shootings? Generate a bar chart sorted in chronological (natural) order (Jan-Feb-Mar- etc) to provide evidence of your answer. From the bar chart, February has the most mass shootings, with 13.
 
-```{r}
+```{r month-most-shootings}
+
+mass_shootings %>% 
+  group_by(month) %>% 
+  count() %>% 
+  ggplot(aes(x = month, y = n)) + 
+  geom_bar(stat = "identity") +
+  scale_x_discrete(limits= month.abb) +
+  geom_text(aes(label = n, y= n - 0.5), 
+            colour = "white", size = 4 , vjust = 1) +
+  labs(title = "Number of mass shootings by month"
+       , x ="", y ="")
+  
 
 ```
 
