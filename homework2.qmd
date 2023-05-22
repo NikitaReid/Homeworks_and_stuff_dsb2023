@@ -79,13 +79,35 @@ mass_shootings %>%
 
 -   Generate a boxplot visualizing the number of total victims, by type of location.
 
-```{r}
+```{r boxplot-by-location, warning=FALSE}
+
+# boxplot of total shooting victims by location
+mass_shootings %>%
+  ggplot(aes(x = location_type, y = total_victims)) + 
+  geom_boxplot() +
+
+# some labels we probably need 
+  labs(title = "Spread of number of victims of a shooting incident \nby location type", 
+       x = "Type of location", y= "Number of victims")
 
 ```
 
 -   Redraw the same plot, but remove the Las Vegas Strip massacre from the dataset.
 
-```{r}
+```{r boxplot-by-location-2}
+
+mass_shootings %>%
+  
+# filter to use all data except the Las Vegas strip massacre
+  filter(case != "Las Vegas Strip massacre") %>% 
+  
+# boxplot of total shooting victims by location
+  ggplot(aes(x = location_type, y = total_victims)) + 
+  geom_boxplot() +
+
+# some labels we probably need 
+  labs(title = "Spread of number of victims of a shooting incident \nby location type (outlier removed)", 
+       x = "Type of location", y= "Number of victims")
 
 ```
 
