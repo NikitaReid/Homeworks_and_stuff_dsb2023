@@ -542,9 +542,11 @@ energy <- read_csv(url) %>%
          energy_per_capita,	# Primary energy consumption per capita, measured in kilowatt-hours	Calculated by Our World in Data based on BP Statistical Review of World Energy and EIA International Energy Data
          energy_per_gdp,	# Energy consumption per unit of GDP. This is measured in kilowatt-hours per 2011 international-$.
          per_capita_electricity, #	Electricity generation per capita, measured in kilowatt-hours
-  ) %>% 
+  ) 
 
+  
 # pivot longer to get the different categories of electricity source into one column and their %s into another
+new_energy <- energy %>%
   pivot_longer(cols=4:12,
                names_to = "electricity_source"
                , values_to = "percentage_of_source") %>% 
@@ -568,7 +570,7 @@ energy <- read_csv(url) %>%
   labs(x='', y ='', title= "Electricity Production Mix", fill="source") + scale_y_continuous(labels = scales::percent) +
   theme_bw()
  
-energy
+new_energy
 
 ```
 
@@ -622,4 +624,36 @@ graph_2_data
 
 ```{r graph-3 , message=FALSE, warning=FALSE}
 
+# left join the two tables by country, year 
+graph_3_data <- left_join(x = co2_percap, y = energy,
+                          by = c("country", "year")) %>% 
+  
+# select my country and remove missing values 
+  filter(country=="United Kingdom") %>% 
+  drop_na(co2percap) %>% 
+  
+# mutate new column for elec used / capita / day 
+  mutate(elec_cap_day = per_capita_electricity/365) %>% 
+  
+# scatterplot of elec used / capita / day vs co2percap 
+  ggplot(aes(x = elec_cap_day, y= co2percap)) +
+  geom_point() +
+  
+# fix labels as in example figure 
+  labs(title="CO2 vs electricity consumption per capita/day", 
+       x = "Electricity used (kWh) per capita/day", 
+       y= "CO2 per capita") + 
+# label the data points with year 
+  geom_text_repel(aes(label= year)) 
+  
+graph_3_data
+```
+
+```{r patchwork , warning=FALSE}
+
+# import patchwork 
+library(patchwork)
+
+# stitch plots together 
+new_energy / (graph_2_data | graph_3_data)
 ```
