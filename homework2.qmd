@@ -386,6 +386,8 @@ card_fraud %>%
 
 -   When is fraud more prevalent? Which days, months, hours?
 
+    Fraud seems to occur far more frequently during night time hours when people are asleep and more frequently on weekend days as these are the times during which people are paying less attention to their bank accounts. Furthermore, fraud is far more common in the first six months of the year than the last.
+
 ```{r time-of-fraud}
 
 # use lubridate to create some new variables 
@@ -439,18 +441,38 @@ new_card_fraud %>%
             colour = "white", size = 4 , vjust = 2) +
   labs(x='', y='', 
        title = "Number of occurences of fraud by month")
+
+
+# too many hours in a day to investigate nicely with a graph  
+# make a table instead 
+new_card_fraud %>% 
+  
+# filter only for fraudulent transactions
+  filter(is_fraud==1) %>% 
+  
+# count number of transactions of fraud by hour of the day 
+  group_by(hour) %>% 
+  count() %>%
+# arrange from most fraud occurences to least 
+  arrange(desc(n))
 ```
 
--   Are older customers significantly more likely to be victims of credit card fraud? To calculate a customer's age, we use the `lubridate` package and the following code
+-   Are older customers significantly more likely to be victims of credit card fraud? The table suggests that older customers are not more likely to be victims of credit card fraud than younger customers. All ages are affected.
 
-```         
-  mutate(
-   age = interval(dob, trans_date_trans_time) / years(1),
-    )
-```
+```{r fraud-by-age}
 
-```{r}
-
+card_fraud %>% 
+# use lubridate package to calculate customer age 
+  mutate(age = interval(dob, trans_date_trans_time) 
+         / years(1),) %>% 
+  
+# create variable of age rounded to the nearest year
+  mutate(age_years = round(age, digits=0)) %>% 
+  
+# group by rounded age and count from highest to lowest 
+  group_by(age_years) %>% 
+  count() %>% 
+  arrange(desc(n))
 ```
 
 -   Is fraud related to distance? The distance between a card holder's home and the location of the transaction can be a feature that is related to fraud. To calculate distance, we need the latidue/longitude of card holders's home and the latitude/longitude of the transaction, and we will use the [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) to calculate distance. I adapted code to [calculate distance between two points on earth](https://www.geeksforgeeks.org/program-distance-two-points-earth/amp/) which you can find below
