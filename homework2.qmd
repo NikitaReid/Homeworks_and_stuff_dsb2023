@@ -20,6 +20,7 @@ library(wbstats)
 library(skimr)
 library(countrycode)
 library(here)
+library(ggrepel)
 ```
 
 # Data Visualisation
@@ -515,10 +516,6 @@ fraud %>%
 
 # Exploring sources of electricity production, CO2 emissions, and GDP per capita.
 
-## 2. A scatter plot that looks at how CO2 per capita and GDP per capita are related
-
-## 3. A scatter plot that looks at how electricity usage (kWh) per capita/day GDP per capita are related
-
 We will get energy data from the Our World in Data website, and CO2 and GDP per capita emissions from the World Bank.
 
 ```{r graph-1 , message=FALSE, warning=FALSE}
@@ -568,19 +565,15 @@ energy <- read_csv(url) %>%
   
 # fix labels according to example image 
 # and get y axis in a % scale as in example image 
-  labs(x='', y ='', title= "Electricity Production Mix", fill="source") + scale_y_continuous(labels = scales::percent)
+  labs(x='', y ='', title= "Electricity Production Mix", fill="source") + scale_y_continuous(labels = scales::percent) +
+  theme_bw()
  
 energy
 
 ```
 
-1.  You may need to join these data frames
-    -   Use `left_join` from `dplyr` to [join the tables](http://r4ds.had.co.nz/relational-data.html)
-    -   To complete the merge, you need a unique *key* to match observations between the data frames. Country names may not be consistent among the three dataframes, so please use the 3-digit ISO code for each country
-    -   An aside: There is a great package called [`countrycode`](https://github.com/vincentarelbundock/countrycode) that helps solve the problem of inconsistent country names (Is it UK? United Kingdon? Great Britain?). `countrycode()` takes as an input a country's name in a specific format and outputs it using whatever format you specify.
-2.  Write a function that takes as input any country's name and returns all three graphs. You can use the `patchwork` package to arrange the three graphs as shown below
+```{r graph-2 , message=FALSE, warning=FALSE}
 
-```{r}
 #Download data for C02 emissions per capita https://data.worldbank.org/indicator/EN.ATM.CO2E.PC
 co2_percap <- wb_data(country = "countries_only", 
                       indicator = "EN.ATM.CO2E.PC", 
@@ -605,4 +598,28 @@ gdp_percap <- wb_data(country = "countries_only",
   select(-c(unit, obs_status, footnote, last_updated)) %>% 
   rename(year = date,
          GDPpercap = value)
+
+# left join the two tables by 3 digit iso code, year 
+graph_2_data <- left_join(x = gdp_percap, y = co2_percap, by = c("iso3c", "year")) %>% 
+  
+# select my country and remove missing values 
+  filter(iso3c=="GBR") %>% 
+  drop_na(GDPpercap) %>% 
+  
+# scatterplot of gdppercap vs co2percap 
+  ggplot(aes(x = GDPpercap, y= co2percap)) +
+  geom_point() +
+# fix labels as in example figure 
+  labs(title="CO2 vs GDP per capita", 
+       x = "GDP per capita", y= "CO2 per capita") + 
+# label the data points with year 
+  geom_text_repel(aes(label= year)) + 
+# fix x axis scale to dollars as in example figure 
+  scale_x_continuous(labels = scales::dollar)
+  
+graph_2_data
+```
+
+```{r graph-3 , message=FALSE, warning=FALSE}
+
 ```
