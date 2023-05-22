@@ -515,23 +515,13 @@ fraud %>%
 
 # Exploring sources of electricity production, CO2 emissions, and GDP per capita.
 
-There are many sources of data on how countries generate their electricity and their CO2 emissions. I would like you to create three graphs:
-
-## 1. A stacked area chart that shows how your own country generated its electricity since 2000.
-
-You will use
-
-`geom_area(colour="grey90", alpha = 0.5, position = "fill")`
-
 ## 2. A scatter plot that looks at how CO2 per capita and GDP per capita are related
 
 ## 3. A scatter plot that looks at how electricity usage (kWh) per capita/day GDP per capita are related
 
-We will get energy data from the Our World in Data website, and CO2 and GDP per capita emissions from the World Bank, using the `wbstats`package.
+We will get energy data from the Our World in Data website, and CO2 and GDP per capita emissions from the World Bank.
 
-```{r}
-#| message: false
-#| warning: false
+```{r graph-1 , message=FALSE, warning=FALSE}
 
 # Download electricity data
 url <- "https://nyc3.digitaloceanspaces.com/owid-public/data/energy/owid-energy-data.csv"
@@ -555,9 +545,43 @@ energy <- read_csv(url) %>%
          energy_per_capita,	# Primary energy consumption per capita, measured in kilowatt-hours	Calculated by Our World in Data based on BP Statistical Review of World Energy and EIA International Energy Data
          energy_per_gdp,	# Energy consumption per unit of GDP. This is measured in kilowatt-hours per 2011 international-$.
          per_capita_electricity, #	Electricity generation per capita, measured in kilowatt-hours
-  ) 
+  ) %>% 
 
-# Download data for C02 emissions per capita https://data.worldbank.org/indicator/EN.ATM.CO2E.PC
+# pivot longer to get the different categories of electricity source into one column and their %s into another
+  pivot_longer(cols=4:12,
+               names_to = "electricity_source"
+               , values_to = "percentage_of_source") %>% 
+  
+# filter for my country and remove missing values 
+  filter(country == "United Kingdom") %>% 
+  drop_na(percentage_of_source) %>% 
+  
+# group by source of electricity 
+  group_by(electricity_source) %>% 
+
+# plot graph number 1 with year on x axis, % of source on y 
+# use are to fill the different electricity sources 
+  ggplot(aes(x =year, y= percentage_of_source, 
+             fill=electricity_source)) + 
+           geom_area(colour="grey90",
+                     alpha = 0.5, position = "fill") +
+  
+# fix labels according to example image 
+# and get y axis in a % scale as in example image 
+  labs(x='', y ='', title= "Electricity Production Mix", fill="source") + scale_y_continuous(labels = scales::percent)
+ 
+energy
+
+```
+
+1.  You may need to join these data frames
+    -   Use `left_join` from `dplyr` to [join the tables](http://r4ds.had.co.nz/relational-data.html)
+    -   To complete the merge, you need a unique *key* to match observations between the data frames. Country names may not be consistent among the three dataframes, so please use the 3-digit ISO code for each country
+    -   An aside: There is a great package called [`countrycode`](https://github.com/vincentarelbundock/countrycode) that helps solve the problem of inconsistent country names (Is it UK? United Kingdon? Great Britain?). `countrycode()` takes as an input a country's name in a specific format and outputs it using whatever format you specify.
+2.  Write a function that takes as input any country's name and returns all three graphs. You can use the `patchwork` package to arrange the three graphs as shown below
+
+```{r}
+#Download data for C02 emissions per capita https://data.worldbank.org/indicator/EN.ATM.CO2E.PC
 co2_percap <- wb_data(country = "countries_only", 
                       indicator = "EN.ATM.CO2E.PC", 
                       start_date = 1990, 
@@ -582,18 +606,3 @@ gdp_percap <- wb_data(country = "countries_only",
   rename(year = date,
          GDPpercap = value)
 ```
-
-Specific questions:
-
-1.  How would you turn `energy` to long, tidy format?
-2.  You may need to join these data frames
-    -   Use `left_join` from `dplyr` to [join the tables](http://r4ds.had.co.nz/relational-data.html)
-    -   To complete the merge, you need a unique *key* to match observations between the data frames. Country names may not be consistent among the three dataframes, so please use the 3-digit ISO code for each country
-    -   An aside: There is a great package called [`countrycode`](https://github.com/vincentarelbundock/countrycode) that helps solve the problem of inconsistent country names (Is it UK? United Kingdon? Great Britain?). `countrycode()` takes as an input a country's name in a specific format and outputs it using whatever format you specify.
-3.  Write a function that takes as input any country's name and returns all three graphs. You can use the `patchwork` package to arrange the three graphs as shown below
-
-![](images/electricity-co2-gdp.png)
-
-# Deliverables
-
-There is a lot of explanatory text, comments, etc. You do not need these, so delete them and produce a stand-alone document that you could share with someone. Knit the edited and completed Quarto Markdown (qmd) file as a Word document (use the "Render" button at the top of the script editor window) and upload it to Canvas. You must be commiting and pushing tour changes to your own Github repo as you go along.
