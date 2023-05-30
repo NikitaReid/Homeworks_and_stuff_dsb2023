@@ -168,11 +168,46 @@ party_table %>%
 # graph image reproduced 
 ```
 
-You may even want to remove some of the smaller parties that hardly register on the graph. Would facetting help you?
+```{r prettier-graph, message=FALSE}
 
-Finally, when you are done working with the databse, make sure you close the connection, or disconnect from the database.
+# the same as above using some facetting to make things prettier (maybe?)
 
-```{r}
+party_table %>% 
+# use lubridate to extract only year value out of date 
+  mutate(year=lubridate::year(date)) %>% 
+  
+# group by year and party 
+  group_by(year,name) %>% 
+  
+# calculate total donations and proportion for each party & year
+  summarise(total_year_donations=sum(value)) %>% 
+  mutate(prop = 
+           total_year_donations/sum(total_year_donations)) %>% 
+  
+
+# bar chart with year on x axis, total donations on y axis 
+
+  ggplot(aes(x=year, y=total_year_donations, fill=name)) +
+  
+  geom_bar(position="dodge", stat = "identity") +
+  
+# make y-axis scientific notation go away 
+  scale_y_continuous(labels = scales::comma) +
+  
+# fix labels and theme as in example figure 
+  labs(x ="", y ="",
+       title = "Conservatives have captured the majority of political donations",
+       subtitle = "Donations to political parties, 2020-2022") +
+  theme_bw() +
+  
+# now facet wrap by party, make the y scales free and remove legend 
+  facet_wrap(~name, scales = "free_y") +
+  guides(fill="none") 
+```
+
+```{r disconnect-database, warning=FALSE}
+
+# disconnect from the database 
 dbDisconnect(sky_westminster)
 ```
 
