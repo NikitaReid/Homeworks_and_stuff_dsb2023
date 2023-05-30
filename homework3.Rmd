@@ -46,21 +46,38 @@ library(readxl)
 The database, made available by Simon Willison, is an `SQLite` database.
 
 ```{r opening-connection-to-database}
+
+# establish connection to database 
+# specify driver and database name 
 sky_westminster <- DBI::dbConnect(
   drv = RSQLite::SQLite(),
   dbname = here::here("data", "sky-westminster-files.db")
 )
 ```
 
-How many tables does the database have?
+How many tables does the database have? There are 7 tables listed.
 
-```{r}
+```{r list-tables}
+
+# list all tables in the database 
 DBI::dbListTables(sky_westminster)
 ```
 
-## Which MP has received the most amount of money?
+Which MP has received the most amount of money? Theresa May
 
-You need to work with the `payments` and `members` tables and for now we just want the total among all years. To insert a new, blank chunk of code where you can write your beautiful code (and comments!), please use the following shortcut: `Ctrl + Alt + I` (Windows) or `cmd + option + I` (mac)
+```{r mp-most-money}
+
+members <- tbl(sky_westminster, "members") %>% 
+  rename("member_id" = "id")
+
+payments <- tbl(sky_westminster, "payments")
+
+member_payments <- left_join(x=payments, y=members, by = 'member_id') %>% 
+  group_by(name) %>% 
+  summarise(total_money = sum(value)) %>% 
+  arrange(desc(total_money))
+member_payments
+```
 
 ## Any `entity` that accounts for more than 5% of all donations?
 
