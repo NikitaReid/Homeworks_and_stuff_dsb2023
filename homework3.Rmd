@@ -91,42 +91,68 @@ Is there any `entity` whose donations account for more than 5% of the total paym
 
 If we exclude payments made to MPs as "Earnings from other employment" , as I think we should because these are not strictly "donations" , then no entity comes in above 5%. The largest donating entity is Unite with roughly 3.8% of donations in this time period (see first table). Investigating, it seems they donated to a large number of MPs, but donated more than 4 times more to Rebecca Long-Bailey than anybody else (see second table).
 
+If we then go back and include all payment categories, one entity, Withers LLP comes in at roughly 5.8% of total payments to MPs (see third table) and all of these payments were made to a single MP - Sir Geoffrey Cox (see fourth table).
+
 ```{r big-donations-entities, message=FALSE, warning=FALSE}
 
+# first we filter and examine only donations (not other earnings)
 member_payments %>%
   filter(category_name != "Earnings from other employment") %>%
+# collect data into R
   collect() %>% 
+  
+# separate out date column so we can filter for years 2020-2022 only
   separate(date, into= c("word1", "word2", "month", "year"),sep=" " ) %>% 
   filter(year=="2020" | year=="2021" | year=="2022"  ) %>% 
+  
+# group by entity and remove missing values 
   group_by(entity) %>% 
   drop_na(value) %>% 
+  
+# calculate total donations and percentage of total for each entity
+# arranged largest to smallest
   summarize(total_donations=sum(value)) %>% 
   arrange(desc(total_donations)) %>% 
   mutate(percentage=total_donations/sum(total_donations)*100)
-  
+
+# investigate only highest % entity - Unite   
 member_payments %>% 
   filter(entity=="Unite") %>% 
+  
+# find out which MPs they donated to and how much to each MP in total
+# arranged largest to smallest  
   group_by(name) %>% 
   summarize(total_donations_Unite=sum(value)) %>% 
   arrange(desc(total_donations_Unite))
 
 
-
+# now we examine all payments 
 member_payments %>%
+# collect data into R
   collect() %>% 
+  
+# separate out date column so we can filter for years 2020-2022 only  
   separate(date, into= c("word1", "word2", "month", "year"),sep=" " ) %>% 
   filter(year=="2020" | year=="2021" | year=="2022"  ) %>% 
+  
+# group by entity and remove missing values 
   group_by(entity) %>% 
   drop_na(value) %>% 
-  summarize(total_donations=sum(value)) %>% 
-  arrange(desc(total_donations)) %>% 
-  mutate(percentage=total_donations/sum(total_donations)*100)
-  
+
+# calculate total payments and percentage of total for each entity
+# arranged largest to smallest
+  summarize(total_payments=sum(value)) %>% 
+  arrange(desc(total_payments)) %>% 
+  mutate(percentage=total_payments/sum(total_payments)*100)
+
+# investigate only highest % entity - Withers
 member_payments %>% 
   filter(entity=="Withers LLP") %>% 
+  
+# find out which MPs they donated to and how much to each MP in total
   group_by(name) %>% 
-  summarize(total_donations_Withers=sum(value)) %>% 
-  arrange(desc(total_donations_Withers)
+  summarize(total_payments_Withers=sum(value)) 
+
 ```
 
 How many distinct entities who paid money to MPS are there?
