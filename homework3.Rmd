@@ -157,18 +157,46 @@ member_payments %>%
 
 How many distinct entities who paid money to MPS are there?
 
+The authors of the database explicitly state that they have taken care to eliminate duplicates and combine names/entities etc. that they believe to be the same. Hence, I will not brute force any of the entities that "look similar" together because we cannot definitively know they are the same. Hence, 2213 unique entities.
+
 ```{r distinct_entities}
 
+# collect data into R 
+# and count number of unique entity data values 
+member_payments %>% 
+  collect() %>% 
+  summarise(number_of_unique_entities = n_unique(entity))
 
 ```
 
 How many (as a number and %) donated to MPs belonging to a single party only?
 
+2036 entities (\~92%)
+
+```{r single-party-only}
+
+# group by entity and collect data into R
+member_payments %>% 
+  group_by(entity) %>% 
+  collect() %>% 
+  
+# calculate number of parties each entity donated to
+  summarize(number_of_parties = n_unique(party_id)) %>% 
+  
+# create a column to check whether they only donated to a single party id 
+# and count single party yes versus no 
+  mutate(single_party = case_when(number_of_parties==1 ~"yes", TRUE ~"no")) %>% 
+  count(single_party) %>% 
+  
+# calculate percentages 
+  mutate(percentage = n/sum(n)*100) %>% 
+  
+# only display results for entities donating to a single party 
+  filter(single_party=="yes")
+  
+```
+
 ## Which party has raised the greatest amount of money in each of the years 2020-2022?
-
-How many distinct entities who paid money to MPS are there?
-
-How many (as a number and %) donated to MPs belonging to a single party only?
 
 ```{r party-donations-table, message=FALSE}
 
