@@ -211,26 +211,16 @@ party_table %>%
 dbDisconnect(sky_westminster)
 ```
 
-# Anonymised Covid patient data from the CDC
+# Anonymized COVID patient data from the CDC
 
-We will be using a dataset with [anonymous Covid-19 patient data that the CDC publishes every month](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data-with-Ge/n8mc-b4w4). The file we will use was released on April 11, 2023, and has data on 98 million of patients, with 19 features. This file cannot be loaded in memory, but luckily we have the data in `parquet` format and we will use the `{arrow}` package.
+We will be using a data set with [anonymous Covid-19 patient data that the CDC publishes every month](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data-with-Ge/n8mc-b4w4).
 
-## Obtain the data
-
-The dataset `cdc-covid-geography` in in `parquet` format that {arrow}can handle. It is \> 600Mb and too large to be hosted on Canvas or Github, so please download it from dropbox <https://www.dropbox.com/sh/q1yk8mmnbbrzavl/AAAxzRtIhag9Nc_hODafGV2ka?dl=0> and save it in your `dsb` repo, under the `data` folder
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-
+```{r covid-data, echo=FALSE, message=FALSE, warning=FALSE}
 
 tic() # start timer
 cdc_data <- open_dataset(here::here("data", "cdc-covid-geography"))
 toc() # stop timer
 
-
-glimpse(cdc_data)
 ```
 
 Can you query the database and replicate the following plot?
