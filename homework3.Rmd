@@ -309,7 +309,7 @@ party_table %>%
 dbDisconnect(sky_westminster)
 ```
 
-# Anonymized COVID patient data from the CDC
+# Anonymised COVID patient data from the CDC
 
 We will be using a data set with [anonymous Covid-19 patient data that the CDC publishes every month](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data-with-Ge/n8mc-b4w4).
 
@@ -321,7 +321,7 @@ toc() # stop timer
 
 ```
 
-COVID CFR % by age group, sex and ICU Admission
+COVID Case Fatality Ratio (CFR %) by age group, sex and ICU Admission
 
 ```{r covid-cfr-plot-1}
 
@@ -376,15 +376,68 @@ cdc_data %>%
   geom_text((aes(label=(sprintf("%0.0f",percentage*100)))),
             size=3, hjust=1, color= "black") 
 
+# figure reproduced 
+
 ```
 
-The previous plot is an aggregate plot for all three years of data. What if we wanted to plot Case Fatality Ratio (CFR) over time? Write code that collects the relevant data from the database and plots the following
+Now Plot Case Fatality Ratio (CFR) over time:
 
-```{r echo=FALSE, out.width="100%"}
-knitr::include_graphics(here::here("images", "cfr-icu-overtime.png"), error = FALSE)
+```{r covid-cfr-plot-2}
+  
+# filter out all missing and unknown data responses 
+cdc_data %>% 
+  filter(icu_yn == "Yes"| icu_yn == "No") %>%
+  filter(sex=="Male" | sex=="Female") %>% 
+  filter(age_group != "Missing") %>% 
+  filter(death_yn != "Unknown" & death_yn != "Missing") %>% 
+  filter(case_month != "2020-02") %>% 
+  
+# group by 5 variables: case date (month), sex, age group, icu admission and death 
+  group_by(case_month,sex, age_group,icu_yn,death_yn) %>% 
+  
+# collect data into R and remove NA values 
+# calculate number and percantage of deaths (CFR %) for each group 
+  summarize(number_death = n()) %>% 
+  collect() %>% 
+  drop_na(case_month,sex,age_group,icu_yn,death_yn) %>% 
+  mutate(percentage=number_death/sum(number_death)) %>% 
+
+# plot only those who died for the CFR % points 
+  filter(death_yn =="Yes") %>% 
+  
+# create column to fix y axis facet grid labels 
+  mutate(icu_reformatted = case_when(icu_yn=="Yes" ~ "ICU Admission", 
+                                     TRUE ~"No ICU Admission")) %>% 
+
+# plot lines for CFR %  grouped by age_group 
+# and use default line color as in example image 
+  ggplot(aes(x = case_month, y =percentage, group=age_group, color=age_group)) +
+  geom_line() +
+  
+# 2D facet grid of patient sex versus ICU admission groups 
+  facet_grid(factor(icu_reformatted, levels = c("ICU Admission",
+
+                                                "No ICU Admission"))~sex,
+             scales = "free") + 
+# replicate theme and labels from example picture (include caption, remove axes)
+# vertcally orientate x axis date labels 
+  theme_light() +
+  theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) +
+  
+  labs(x="",y="", caption = "Source: CDC", color="Age Group",
+       title="Covid CFR % by age group, sex and ICU Admission") +
+
+# fix y-axis into % labels as in example image 
+  scale_y_continuous(labels=scales::percent) + 
+
+# add the CFR% text to points, rounded without decimal places 
+  geom_text(aes(label=(sprintf("%0.0f",percentage*100))), size=3)
+
+# figure reproduced
+
 ```
 
-For each patient, the dataframe also lists the patient's states and county [FIPS code](https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code). The CDC also has information on the [NCHS Urban-Rural classification scheme for counties](https://www.cdc.gov/nchs/data_access/urban_rural.htm)
+For each patient, the data frame also lists the patient's states and county [FIPS code](https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code). The CDC also has information on the [NCHS Urban-Rural classification scheme for counties](https://www.cdc.gov/nchs/data_access/urban_rural.htm)
 
 ```{r}
 urban_rural <- read_xlsx(here::here("data", "NCHSURCodes2013.xlsx")) %>% 
