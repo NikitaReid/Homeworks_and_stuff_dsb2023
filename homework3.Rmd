@@ -324,26 +324,58 @@ toc() # stop timer
 COVID CFR % by age group, sex and ICU Admission
 
 ```{r covid-cfr-plot-1}
+
+# filter out all missing and unknown data responses 
 cdc_data %>% 
   filter(icu_yn == "Yes"| icu_yn == "No") %>%
   filter(sex=="Male" | sex=="Female") %>% 
   filter(age_group != "Missing") %>% 
   filter(death_yn != "Unknown" & death_yn != "Missing") %>% 
+  
+# group by 4 variables: sex, age group, icu admission and death 
   group_by(sex, age_group,icu_yn,death_yn) %>% 
+  
+# collect data into R and remove NA values 
+# calculate number and percantage of deaths (CFR %) for each group 
   summarize(number_death = n()) %>% 
   collect() %>% 
   drop_na(sex,age_group,icu_yn,death_yn) %>% 
   mutate(percentage=number_death/sum(number_death)) %>% 
+
+# plot only those who died for the CFR % bars 
   filter(death_yn =="Yes") %>% 
-  mutate(icu_reformatted = case_when(icu_yn=="Yes" ~ "ICU Admission", TRUE ~"No ICU Admission")) %>% 
+  
+# create column to fix y axis facet grid labels 
+  mutate(icu_reformatted = case_when(icu_yn=="Yes" ~ "ICU Admission", 
+                                     TRUE ~"No ICU Admission")) %>% 
+
+# plot bars for CFR % by age_group and use default fill as in example image 
   ggplot(aes(x = percentage, y =age_group, fill=death_yn)) +
   geom_bar(stat="identity") +
-  facet_grid(factor(icu_reformatted, levels = c("ICU Admission","No ICU Admission"))~sex) + theme_light() +
+  
+# 2D facet grid of patient sex versus ICU admission groups 
+  facet_grid(factor(icu_reformatted, levels = c("ICU Admission",
+
+                                                "No ICU Admission"))~sex) + 
+# replicate theme and labels from example picture (include caption, remove axes)
+  theme_light() +
+  
   labs(x="",y="", caption = "Source: CDC",
        title="Covid CFR % by age group, sex and ICU Admission") +
-  scale_x_continuous(labels=scales::percent) +
+
+# fix x-axis into % labels as in example image 
+  scale_x_continuous(labels=scales::percent) + 
+  
+# fix y-axis levels to include evn empty age groups as in example image
+  scale_y_discrete(limits = c("0 - 17 years", "18 to 49 years", 
+                              "50 to 64 years", "65+ years")) + 
+# no legend 
   guides(fill="none") +
-  geom_text((aes(label=(sprintf("%0.0f",percentage*100)))), size=3, hjust=1, color= "black") + scale_y_discrete(limits = c("0 - 17 years", "18 to 49 years", "50 to 64 years", "65+ years"))
+
+# add the CFR% text to bars, rounded without decimal places, coloured black 
+  geom_text((aes(label=(sprintf("%0.0f",percentage*100)))),
+            size=3, hjust=1, color= "black") 
+
 ```
 
 The previous plot is an aggregate plot for all three years of data. What if we wanted to plot Case Fatality Ratio (CFR) over time? Write code that collects the relevant data from the database and plots the following
