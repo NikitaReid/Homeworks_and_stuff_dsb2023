@@ -87,18 +87,62 @@ member_payments %>%
 
 ```
 
-Is there any `entity` whose donations account for more than 5% of the total payments given to MPs? Who are they and who did they give money to?
+Is there any `entity` whose donations account for more than 5% of the total payments given to MPs over the 2020-2022 interval? Who are they and who did they give money to?
 
-```{r big-donations-entities}
+If we exclude payments made to MPs as "Earnings from other employment" , as I think we should because these are not strictly "donations" , then no entity comes in above 5%. The largest donating entity is Unite with roughly 3.8% of donations in this time period (see first table). Investigating, it seems they donated to a large number of MPs, but donated more than 4 times more to Rebecca Long-Bailey than anybody else (see second table).
+
+```{r big-donations-entities, message=FALSE, warning=FALSE}
+
+member_payments %>%
+  filter(category_name != "Earnings from other employment") %>%
+  collect() %>% 
+  separate(date, into= c("word1", "word2", "month", "year"),sep=" " ) %>% 
+  filter(year=="2020" | year=="2021" | year=="2022"  ) %>% 
+  group_by(entity) %>% 
+  drop_na(value) %>% 
+  summarize(total_donations=sum(value)) %>% 
+  arrange(desc(total_donations)) %>% 
+  mutate(percentage=total_donations/sum(total_donations)*100)
+  
+member_payments %>% 
+  filter(entity=="Unite") %>% 
+  group_by(name) %>% 
+  summarize(total_donations_Unite=sum(value)) %>% 
+  arrange(desc(total_donations_Unite))
+
+
+
+member_payments %>%
+  collect() %>% 
+  separate(date, into= c("word1", "word2", "month", "year"),sep=" " ) %>% 
+  filter(year=="2020" | year=="2021" | year=="2022"  ) %>% 
+  group_by(entity) %>% 
+  drop_na(value) %>% 
+  summarize(total_donations=sum(value)) %>% 
+  arrange(desc(total_donations)) %>% 
+  mutate(percentage=total_donations/sum(total_donations)*100)
+  
+member_payments %>% 
+  filter(entity=="Withers LLP") %>% 
+  group_by(name) %>% 
+  summarize(total_donations_Withers=sum(value)) %>% 
+  arrange(desc(total_donations_Withers)
+```
+
+How many distinct entities who paid money to MPS are there?
+
+```{r distinct_entities}
+
 
 ```
 
-## Do `entity` donors give to a single party or not?
-
--   How many distinct entities who paid money to MPS are there?
--   How many (as a number and %) donated to MPs belonging to a single party only?
+How many (as a number and %) donated to MPs belonging to a single party only?
 
 ## Which party has raised the greatest amount of money in each of the years 2020-2022?
+
+How many distinct entities who paid money to MPS are there?
+
+How many (as a number and %) donated to MPs belonging to a single party only?
 
 ```{r party-donations-table, message=FALSE}
 
@@ -237,14 +281,15 @@ cdc_data %>%
   drop_na(sex,age_group,icu_yn,death_yn) %>% 
   mutate(percentage=number_death/sum(number_death)) %>% 
   filter(death_yn =="Yes") %>% 
+  mutate(icu_reformatted = case_when(icu_yn=="Yes" ~ "ICU Admission", TRUE ~"No ICU Admission")) %>% 
   ggplot(aes(x = percentage, y =age_group, fill=death_yn)) +
   geom_bar(stat="identity") +
-  facet_grid(factor(icu_yn, levels = c("Yes","No"))~sex) + theme_light() +
+  facet_grid(factor(icu_reformatted, levels = c("ICU Admission","No ICU Admission"))~sex) + theme_light() +
   labs(x="",y="", caption = "Source: CDC",
        title="Covid CFR % by age group, sex and ICU Admission") +
   scale_x_continuous(labels=scales::percent) +
   guides(fill="none") +
-  geom_text((aes(label=(sprintf("%0.0f",percentage*100)))), hjust=1, color= "black")
+  geom_text((aes(label=(sprintf("%0.0f",percentage*100)))), size=3, hjust=1, color= "black") + scale_y_discrete(limits = c("0 - 17 years", "18 to 49 years", "50 to 64 years", "65+ years"))
 ```
 
 The previous plot is an aggregate plot for all three years of data. What if we wanted to plot Case Fatality Ratio (CFR) over time? Write code that collects the relevant data from the database and plots the following
@@ -398,4 +443,4 @@ url <- str_c(base_url, page)
 
 -   Write the data frame to a csv file called `all_consulting_jobs.csv` in the `data` folder.
 
-***ASK KOSTIS ABOUT WORD VS HTML AND DISCREPANCY IN Q1 PAYMENTS VS DONATIONS AND THE COVID GRAPH SCREW UP***
+***ASK KOSTIS ABOUT WORD VS HTML AND DISCREPANCY IN Q1 PAYMENTS VS DONATIONS AND GRAPH SIMPLIFY***
