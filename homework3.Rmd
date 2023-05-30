@@ -227,6 +227,21 @@ COVID CFR % by age group, sex and ICU Admission
 
 ```{r covid-cfr-plot-1}
 
+cdc_data %>% 
+  filter(icu_yn == "Yes"| icu_yn == "No") %>%
+  filter(sex=="Male" | sex=="Female") %>% 
+  filter(age_group != "Missing") %>% 
+  filter(death_yn != "Unknown" & death_yn != "Missing") %>% 
+  group_by(sex, age_group,icu_yn,death_yn) %>% 
+  summarize(number_death = n()) %>% 
+  collect() %>% 
+  drop_na(sex,age_group,icu_yn,death_yn) %>% 
+  mutate(percentage=number_death/sum(number_death)*100) %>% 
+  ggplot(aes(x = percentage, y =age_group)) +
+  geom_bar(stat="identity") +
+  facet_grid(icu_yn~sex)
+
+
 ```
 
 The previous plot is an aggregate plot for all three years of data. What if we wanted to plot Case Fatality Ratio (CFR) over time? Write code that collects the relevant data from the database and plots the following
@@ -380,4 +395,4 @@ url <- str_c(base_url, page)
 
 -   Write the data frame to a csv file called `all_consulting_jobs.csv` in the `data` folder.
 
-***ASK KOSTIS ABOUT WORD VS HTML AND DISCREPANCY IN Q1 PAYMENTS VS DONATIONS***
+***ASK KOSTIS ABOUT WORD VS HTML AND DISCREPANCY IN Q1 PAYMENTS VS DONATIONS AND THE GRAPH SCREW UP***
