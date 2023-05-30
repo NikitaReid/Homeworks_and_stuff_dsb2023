@@ -21,6 +21,7 @@
 # RStudio files
 .Rproj.user/Homeworks_and_stuff_dsb2023/data/cdc-covid-geography
 
+/data/cdc-covid-geography
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
