@@ -63,25 +63,35 @@ How many tables does the database have? There are 7 tables listed.
 DBI::dbListTables(sky_westminster)
 ```
 
-Which MP has received the most amount of money? Theresa May
+Which MP has received the most amount of money? Theresa May.
 
 ```{r mp-most-money}
-
+ 
+# set up database objects with dplyr for payments, members
+# rename id column in members so we have a common member_id column to join the two tables by
 members <- tbl(sky_westminster, "members") %>% 
-  rename("member_id" = "id")
+  rename(member_id = id)
 
 payments <- tbl(sky_westminster, "payments")
 
-member_payments <- left_join(x=payments, y=members, by = 'member_id') %>% 
+# join the tables to get MP names & payment values in same table 
+member_payments <- left_join(x=payments, y=members, by = 'member_id')
+
+member_payments %>% 
+# group by MP name 
   group_by(name) %>% 
+# calculate total money received by each MP 
   summarise(total_money = sum(value)) %>% 
+# arrange to get MP who received most money to top of the table 
   arrange(desc(total_money))
-member_payments
+
 ```
 
-## Any `entity` that accounts for more than 5% of all donations?
+Is there any `entity` whose donations account for more than 5% of the total payments given to MPs? Who are they and who did they give money to?
 
-Is there any `entity` whose donations account for more than 5% of the total payments given to MPs over the 2020-2022 interval? Who are they and who did they give money to?
+```{r big-donations-entities}
+
+```
 
 ## Do `entity` donors give to a single party or not?
 
@@ -90,19 +100,75 @@ Is there any `entity` whose donations account for more than 5% of the total paym
 
 ## Which party has raised the greatest amount of money in each of the years 2020-2022?
 
-I would like you to write code that generates the following table.
+```{r party-donations-table, message=FALSE}
 
-```{r echo=FALSE, out.width="80%"}
-knitr::include_graphics(here::here("images", "total_donations_table.png"), error = FALSE)
+# reproducing the figure requested (example figure has been removed here)
+
+# set up database objects with dplyr for donations, parties
+# rename id column in parties so we have a common party_id column to join the two tables by
+party_donations <- tbl(sky_westminster, "party_donations")
+
+parties <- tbl(sky_westminster, "parties") %>% 
+  rename(party_id = id)
+
+# join tables to get party names & donation values in same table
+party_table <- left_join(x=party_donations, y=parties, by="party_id")
+
+party_table %>% 
+# use lubridate to extract only year value out of date 
+  mutate(year=lubridate::year(date)) %>% 
+  
+# group by year and party 
+  group_by(year,name) %>% 
+  
+# calculate total donations and proportion for each party & year
+  summarise(total_year_donations=sum(value)) %>% 
+  mutate(prop = 
+           total_year_donations/sum(total_year_donations)) 
+
+# table image reproduced 
 ```
 
-... and then, based on this data, plot the following graph.
+```{r party-donations-graph, message=FALSE}
 
-```{r echo=FALSE, out.width="80%"}
-knitr::include_graphics(here::here("images", "total_donations_graph.png"), error = FALSE)
+# and now for the graph reproduction requested ...
+
+party_table %>% 
+# use lubridate to extract only year value out of date 
+  mutate(year=lubridate::year(date)) %>% 
+  
+# group by year and party 
+  group_by(year,name) %>% 
+  
+# calculate total donations and proportion for each party & year
+  summarise(total_year_donations=sum(value)) %>% 
+  mutate(prop = 
+           total_year_donations/sum(total_year_donations)) %>% 
+  
+
+# bar chart with year on x axis, total donations on y axis 
+# grouped by party 
+
+  ggplot(aes(x=year, y=total_year_donations, fill=name)) +
+  
+# rearrange parties according to total donations
+  geom_bar(aes(fill=reorder(name,desc(total_year_donations))),
+# position party bars side by side 
+           position="dodge", stat = "identity") +
+  
+# make y-axis scientific notation go away 
+  scale_y_continuous(labels = scales::comma) +
+  
+# fix labels and theme as in example figure 
+  labs(x ="", y ="", fill="Party",
+       title = "Conservatives have captured the majority of political donations",
+       subtitle = "Donations to political parties, 2020-2022") +
+  theme_bw()
+
+# graph image reproduced 
 ```
 
-This uses the default ggplot colour pallete, as I dont want you to worry about using the [official colours for each party](https://en.wikipedia.org/wiki/Wikipedia:Index_of_United_Kingdom_political_parties_meta_attributes). However, I would like you to ensure the parties are sorted according to total donations and not alphabetically. You may even want to remove some of the smaller parties that hardly register on the graph. Would facetting help you?
+You may even want to remove some of the smaller parties that hardly register on the graph. Would facetting help you?
 
 Finally, when you are done working with the databse, make sure you close the connection, or disconnect from the database.
 
