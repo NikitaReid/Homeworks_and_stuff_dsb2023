@@ -654,7 +654,7 @@ scrape_pac <- function(year) {
   url <- str_c(base_url, year)
   
 tables <- url %>%
-# read the websit and get all tables that exist on it
+# read the website and get all tables that exist on it
   read_html() %>%
   
 # CSS selector that isolates all tables on the page
@@ -741,37 +741,61 @@ The website [https://www.consultancy.uk/jobs/](https://www.consultancy.uk/jobs) 
 # is it ok to scrape?
 paths_allowed("https://www.consultancy.uk") 
 
-base_url <- "https://www.consultancy.uk/jobs/page/1"
-
-listings_html <- base_url %>%
-  read_html()
-
 ```
 
-Identify the CSS selectors in order to extract the relevant information from this page, namely
+-   Write a function called `scrape_jobs()` that scrapes information from the webpage for consulting positions:
 
-1.  job
-2.  firm
-3.  functional area
-4.  type
+```{r scrape-jobs, eval=FALSE}
 
-Can you get all pages of ads, and not just the first one, `https://www.consultancy.uk/jobs/page/1` into a dataframe?
+# define scrape_jobs function for given page 
+scrape_jobs <- function(page) {
 
--   Write a function called `scrape_jobs()` that scrapes information from the webpage for consulting positions. This function should
+# set the url of the website we are scraping 
+  base_url <- "https://www.consultancy.uk/jobs/page/"
+  
+# url combines the base url with whatever page we want 
+  url <- str_c(base_url, page)
+  
+tables <- url %>%
+# read the website and get all tables that exist on it
+  read_html() %>%
+  
+# CSS selector that isolates all tables on the page
+  html_nodes(css="table") %>% 
+  
+# turn table into dataframe 
+  html_table() 
+  
+# We only want first table 
+jobs <-  tables[[1]]  
 
-    -   have one input: the URL of the webpage and should return a data frame with four columns (variables): job, firm, functional area, and type
-
-    -   Test your function works with other pages too, e.g., <https://www.consultancy.uk/jobs/page/2>. Does the function seem to do what you expected it to do?
-
-    -   Given that you have to scrape `...jobs/page/1`, `...jobs/page/2`, etc., define your URL so you can join multiple stings into one string, using `str_c()`. For instnace, if `page` is 5, what do you expect the following code to produce?
-
-```         
-base_url <- "https://www.consultancy.uk/jobs/page/1"
-url <- str_c(base_url, page)
+    return(jobs) }
 ```
 
--   Construct a vector called `pages` that contains the numbers for each page available
+-   Test your function works with other pages too. Does the function seem to do what you expected it to do?
 
--   Map the `scrape_jobs()` function over `pages` in a way that will result in a data frame called `all_consulting_jobs`.
+    It does work on all pages! Here, it takes page 3 and then page 5 and generates the four column table for the corresponding pages.
 
--   Write the data frame to a csv file called `all_consulting_jobs.csv` in the `data` folder.
+```{r testing-scrape-jobs}
+
+# let us test scrape jobs on page 3 and 5 
+scrape_jobs(3)
+
+scrape_jobs(5)
+```
+
+-   Map the `scrape_jobs()` function over a vector called `pages` in a way that will result in a data frame called `all_consulting_jobs` and write the data frame to a csv file called `all_consulting_jobs.csv` in the `data` folder:
+
+```{r all-consulting-jobs, message=FALSE, warning=FALSE}
+
+# create pages vector 
+# for all 8 pages of consulting jobs website  
+urls <- seq(from=2000, to=2022, by=2) 
+
+# map this vector and scrape_pac function to a data frame 
+contributions_all <- map_df(urls, scrape_pac)
+
+# write data frame to csv file in data folder 
+write.csv(contributions_all, "data/contributions-all.csv")
+
+```
