@@ -449,34 +449,49 @@ urban_rural <- read_xlsx(here::here("data", "NCHSURCodes2013.xlsx")) %>%
 
 ```
 
-```{r cfr-plot-3}
+```{r cfr-plot-3, message=FALSE, warning=FALSE}
 
-# first rename fips code column to have same column name to join two tables by 
-# and change the dbl into an int format to have same format to join by 
-urban_rural_new <- urban_rural %>% 
-  mutate(fips_code_new = as.integer(fips_code)) %>% 
-  rename(county_fips_code = fips_code_new) 
-  
-# join cdc_data and urban_rural data by county fips code 
-cdc_urban_rural <- left_join(x = cdc_data, y = urban_rural_new,
-                             by = "county_fips_code")
-
+# select columns we need 
 # filter out all missing and unknown data responses 
-# group by case date and the 2013 code (1 - 6 scale), and death y/n 
-cdc_urban_rural %>%
+# group by all selected columns 
+plot_3 <- cdc_data %>%
+  select(sex, age_group, death_yn, icu_yn, case_month, county_fips_code) %>%
+  filter(icu_yn == "Yes"| icu_yn == "No") %>%
+  filter(sex=="Male" | sex=="Female") %>% 
+  filter(!is.na(age_group)) %>% 
+  filter(age_group != "Missing" & age_group != "Unknown" ) %>% 
   filter(death_yn != "Unknown" & death_yn != "Missing") %>% 
-  filter(case_month!="2020-01" & case_month!="2020-02") %>% 
-  group_by(case_month, x2013_code,death_yn) %>% 
+  group_by(sex, age_group, death_yn, icu_yn, case_month, county_fips_code) %>% 
+# count number of deaths per group and collect into R 
+  summarise(count = n()) |> 
+  collect()
+
+# pivot wider to create column that counts yes/no for deaths 
+plot_3_wide <- plot_3 %>%
+  pivot_wider(names_from = death_yn,
+              values_from = count) %>%  
+# clean the data
+  janitor::clean_names() %>% 
+# remove missing values 
+  drop_na(no) %>% 
+# create columns that calculates death rate  
+  mutate(yes = ifelse(is.na(yes),0,yes),
+    death_rate = yes/(no+yes))     
   
-# calculate number and % of deaths for each group 
-# collect data into R and remove missing values
-  summarize(number_death = n()) %>% 
-  collect() %>% 
-  drop_na(case_month,death_yn,x2013_code) %>% 
-  mutate(percentage=number_death/sum(number_death)) %>% 
+ 
+# join cdc_data and urban_rural data by county fips code 
+cdc_urban_rural <- left_join(plot_3_wide, urban_rural, 
+                             by=c("county_fips_code" = "fips_code"))
+
+# remove missing values and group by county and month 
+cdc_urban_rural %>% 
+  drop_na(x2013_code) %>% 
+  group_by(x2013_code, case_month) %>% 
   
-# plot only those who died for the CFR % points 
-  filter(death_yn =="Yes") %>% 
+# calculate % of people who died per county code/ month 
+  summarise(total_yes = sum(yes),
+            total_no = sum(no),
+            percentage = total_yes/(total_yes +total_no)) %>% 
   
 # create column to fix facet wrap labels 
   mutate(code_reformatted = case_when(x2013_code=="1" ~ "1. Large central metro",
@@ -485,6 +500,8 @@ cdc_urban_rural %>%
                                      x2013_code=="4" ~"4. Small metropolitan",
                                      x2013_code=="5" ~"5. Micropolitan",
                                      x2013_code=="6" ~"6. Noncore")) %>% 
+# remove unwanted month from plot 
+  filter(case_month != "2020-02") %>% 
   
 # plot lines for CFR % each month 
   ggplot(aes(x = case_month, y =percentage, group=code_reformatted,
@@ -505,8 +522,8 @@ cdc_urban_rural %>%
 # fix y-axis into % labels as in example image 
   scale_y_continuous(labels=scales::percent) + 
 
-# add the CFR% text to points, rounded with 1 decimal place
-  geom_text(aes(label=(sprintf("%0.1f",percentage*100))), size=3) +
+# add the CFR% text to points, rounded 
+  geom_text(aes(label=(round(percentage*100, 1))), size=3) +
   
 # no legend 
   guides(color="none") 
@@ -515,35 +532,28 @@ cdc_urban_rural %>%
 
 ```
 
-```{r cfr-plot-4}
+Case Fatality ratio (CFR) in urban and rural areas:
 
-# filter out all missing and unknown data responses 
-# group by case date and urban/rural, and death y/n 
-cdc_urban_rural %>%
-  filter(death_yn != "Unknown" & death_yn != "Missing") %>% 
-  filter(case_month!="2020-01") %>% 
-  mutate(code_urban_rural = case_when(x2013_code==1 ~"Urban",
-                                     x2013_code==2 ~"Urban", 
-                                    x2013_code==3 ~"Urban",
-                                     x2013_code==4 ~"Urban",
-                                     x2013_code==5 ~"Rural",
-                                     x2013_code==6 ~"Rural")) %>% 
-  group_by(death_yn,code_urban_rural, case_month) %>% 
-  
-# calculate number and % of deaths for each group 
-# collect data into R and remove missing values
-  summarize(number_death = n()) %>% 
-  collect() %>% 
-  drop_na(code_urban_rural,case_month,death_yn) %>% 
-  mutate(percentage=number_death/sum(number_death)) %>% 
-  
-# plot only those who died for the CFR % points 
-  filter(death_yn =="Yes") %>% 
-  
-# create column to fix facet wrap labels 
+```{r cfr-plot-4, message=FALSE, warning=FALSE}
 
+# use cdc urban rural tibble and remove missing values 
+cdc_urban_rural %>% 
+  drop_na(x2013_code, county_fips_code) %>% 
   
-# plot lines for CFR % each month 
+# column to fix groups to create only "urban" or "rural" category 
+  mutate(code_urban_rural = case_when(
+    x2013_code == 5 | x2013_code == 6 ~ "Rural",
+      TRUE ~ "Urban")) %>% 
+  
+# group by month and urban vs rural 
+  group_by(code_urban_rural, case_month) %>% 
+  
+# calculate % of people who died per urban or rural area and month 
+  summarise(total_yes = sum(yes),
+            total_no = sum(no),
+            percentage = total_yes/(total_yes +total_no)) %>% 
+    
+# plot lines for CFR % each month grouped by area 
   ggplot(aes(x = case_month, y =percentage, group=code_urban_rural,
              color= code_urban_rural)) +
   geom_line() + 
@@ -559,8 +569,8 @@ cdc_urban_rural %>%
 # fix y-axis into % labels as in example image 
   scale_y_continuous(labels=scales::percent) + 
 
-# add the CFR% text to points, rounded with 1 decimal place
-  geom_text(aes(label=(sprintf("%0.1f",percentage*100))), 
+# add the CFR% text to points, rounded 
+  geom_text(aes(label=(round(percentage*100, 1))), 
             size=3, color="black") 
   
 
