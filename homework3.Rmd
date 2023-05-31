@@ -604,19 +604,10 @@ contributions_tables <- base_url %>%
 contributions <- contributions_tables[[1]] %>% 
   janitor::clean_names()
 
-# output the table 
-contributions
 ```
 
--   First, make sure you can scrape the data for 2022. Use janitor::clean_names() to rename variables scraped using `snake_case` naming.
-
--   Clean the data:
-
-    -   Write a function that converts contribution amounts in `total`, `dems`, and `repubs` from character strings to numeric values.
-    -   Separate the `country_of_origin_parent_company` into two such that country and parent company appear in different columns for country-level analysis.
-
-```{r, eval=FALSE}
-# write a function to parse_currency
+```{r parse-currency, eval=FALSE}
+# write a function to converts amounts to numeric values 
 parse_currency <- function(x){
   x %>%
     
@@ -630,12 +621,14 @@ parse_currency <- function(x){
     as.numeric()
 }
 
-# clean country/parent co and contributions 
+# clean country/parent co and contributions into tewo columns 
 contributions <- contributions %>%
   separate(country_of_origin_parent_company, 
            into = c("country", "parent"), 
            sep = "/", 
            extra = "merge") %>%
+  
+# create new columns using function 
   mutate(
     total = parse_currency(total),
     dems = parse_currency(dems),
@@ -643,12 +636,37 @@ contributions <- contributions %>%
   )
 ```
 
--   Write a function called `scrape_pac()` that scrapes information from the Open Secrets webpage for foreign-connected PAC contributions in a given year. This function should
+```{r scrape-pac, eval=FALSE}
 
-    -   have one input: the URL of the webpage and should return a data frame.
-    -   add a new column to the data frame for `year`. We will want this information when we ultimately have data from all years, so this is a good time to keep track of it. Our function doesn't take a year argument, but the year is embedded in the URL, so we can extract it out of there, and add it as a new column. Use the `str_sub()` function to extract the last 4 characters from the URL. You will probably want to look at the help for this function to figure out how to specify "last 4 characters".
+# define scrape_pac function
+scrape_pac <- function(x){
+  x %>%
+# take and read input x for URL 
+  read_html(x)
+# CSS selector for tables and create data frame out of the table 
+  html_table(html_nodes(x, "table"))[[1]]
+  mutate(year = str_sub(url, -4)) 
+  return(table)}
 
--   Define the URLs for 2022, 2020, and 2000 contributions. Then, test your function using these URLs as inputs. Does the function seem to do what you expected it to do?
+```
+
+```{r}
+
+# Define URLs for 2000, 2020, and 2022 contributions
+url_2000 <- "https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs/2000"
+
+url_2020 <- "https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs/2020"
+
+url_2022 <- "https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs/2022"
+
+contributions2000 <-scrape_pac(url_2000)
+contributions2020 <-scrape_pac(url_2020)
+contributions2022 <-scrape_pac(url_2022)
+
+
+```
+
+-   efine the URLs for 2022, 2020, and 2000 contributions. Then, test your function using these URLs as inputs. Does the function seem to do what you expected it to do?
 
 -   Construct a vector called `urls` that contains the URLs for each webpage that contains information on foreign-connected PAC contributions for a given year.
 
