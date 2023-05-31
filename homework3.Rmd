@@ -583,9 +583,11 @@ In the United States, [*"only American citizens (and immigrants with green cards
 
 All data come from [OpenSecrets.org](https://www.opensecrets.org), a *"website tracking the influence of money on U.S. politics, and how that money affects policy and citizens' lives"*.
 
+-   First, make sure you can scrape the data for 2022:
+
 ```{r allow-scraping-opensecrets, eval=FALSE, warning=FALSE, message=FALSE}
 
-# allow to scrape this website 
+# is it ok to scrape?
 
 paths_allowed("https://www.opensecrets.org")
 
@@ -606,6 +608,8 @@ contributions <- contributions_tables[[1]] %>%
 
 ```
 
+-   Clean the data:
+
 ```{r parse-currency, eval=FALSE}
 # write a function to converts amounts to numeric values 
 parse_currency <- function(x){
@@ -621,7 +625,7 @@ parse_currency <- function(x){
     as.numeric()
 }
 
-# clean country/parent co and contributions into tewo columns 
+# clean country/parent co and contributions into two columns 
 contributions <- contributions %>%
   separate(country_of_origin_parent_company, 
            into = c("country", "parent"), 
@@ -636,54 +640,106 @@ contributions <- contributions %>%
   )
 ```
 
+-   Write a function called scrape_pac() :
+
 ```{r scrape-pac, eval=FALSE}
 
-# define scrape_pac function
-scrape_pac <- function(x){
-  x %>%
-# take and read input x for URL 
-  read_html(x)
-# CSS selector for tables and create data frame out of the table 
-  html_table(html_nodes(x, "table"))[[1]]
-  mutate(year = str_sub(url, -4)) 
-  return(table)}
+# define scrape_pac function for given year 
+scrape_pac <- function(year) {
 
+# set the url of the website we are scraping 
+  base_url <- "https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs/"
+  
+# url combines the base url with whatever year we give 
+  url <- str_c(base_url, year)
+  
+tables <- url %>%
+# read the websit and get all tables that exist on it
+  read_html() %>%
+  
+# CSS selector that isolates all tables on the page
+  html_nodes(css="table") %>% 
+  
+# turn table into dataframe 
+  html_table() 
+  
+  
+# We only want first table 
+# and clean names into _ (snake_case) format as before  
+contributions <-  tables[[1]] %>% 
+  janitor::clean_names()  %>% 
+  
+# add new for year
+  mutate(year=year) %>%
+
+# from parse_currency function 
+# two separate columns for country and parent
+  separate(country_of_origin_parent_company, 
+           into = c("country", "parent"), 
+           sep = "/", 
+           extra = "merge") %>%
+  
+# use parse_currency function to turn contributions into numeric data 
+  mutate(total = parse_currency(total),
+    dems = parse_currency(dems),
+    repubs = parse_currency(repubs))
+  
+    return(contributions) }
+  
 ```
 
-```{r}
+-   Test scrape_pac() using URLs for 2022, 2020, and 2000 as inputs. Does the function seem to do what you expected it to do?
 
-# Define URLs for 2000, 2020, and 2022 contributions
-url_2000 <- "https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs/2000"
+    It does! The function attaches the chosen year to the back of the base url, scrapes the web page and outputs a data frame containing the contributions (here for each of the years 2022, 2020, 2000) with country and parent column separated, contributions amounts as double precision numerical data and a new column for the year.
 
-url_2020 <- "https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs/2020"
+```{r testing}
 
-url_2022 <- "https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs/2022"
+# test scrape_pac function by attaching years 2022, 2020, 2000 
+# in turn to the base url 
 
-contributions2000 <-scrape_pac(url_2000)
-contributions2020 <-scrape_pac(url_2020)
-contributions2022 <-scrape_pac(url_2022)
+scrape_pac(2022)
 
+scrape_pac(2020)
 
+scrape_pac(2000)
 ```
 
--   efine the URLs for 2022, 2020, and 2000 contributions. Then, test your function using these URLs as inputs. Does the function seem to do what you expected it to do?
+-   Map the `scrape_pac()` function over a vector called `urls` that contains the URLs for each webpage for a given year and write to csv file:
 
--   Construct a vector called `urls` that contains the URLs for each webpage that contains information on foreign-connected PAC contributions for a given year.
+```{r contributions-all, message=FALSE, warning=FALSE}
 
--   Map the `scrape_pac()` function over `urls` in a way that will result in a data frame called `contributions_all`.
+# create urls vector 
+# year data on webpage comes every two years 
+urls <- seq(from=2000, to=2022, by=2) 
 
--   Write the data frame to a csv file called `contributions-all.csv` in the `data` folder.
+# map this vector and scrape_pac function to a data frame 
+contributions_all <- map_df(urls, scrape_pac)
+
+# write data frame to csv file in data folder 
+write.csv(contributions_all, "data/contributions-all.csv")
+
+# now investigate data frame a bit 
+
+# let us group by the year donated and who donated 
+# and see who donated the most 
+contributions_all %>%
+  group_by(year, pac_name_affiliate) %>% 
+
+# calculate total donations by year and donating entity (PAC)
+# remove missing values and arrange largest donation on top 
+  summarise(total_donations = sum(total, na.rm=TRUE)) %>% 
+  arrange(desc(total_donations))
+
+```
 
 # Scraping consulting jobs
 
 The website [https://www.consultancy.uk/jobs/](https://www.consultancy.uk/jobs) lists job openings for consulting jobs.
 
-```{r}
-#| label: consulting_jobs_url
-#| eval: false
+```{r consulting_jobs_url, eval=FALSE, message=FALSE, warning=FALSE}
 
-library(robotstxt)
-paths_allowed("https://www.consultancy.uk") #is it ok to scrape?
+# is it ok to scrape?
+paths_allowed("https://www.consultancy.uk") 
 
 base_url <- "https://www.consultancy.uk/jobs/page/1"
 
