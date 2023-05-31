@@ -581,23 +581,31 @@ cdc_urban_rural %>%
 
 In the United States, [*"only American citizens (and immigrants with green cards) can contribute to federal politics, but the American divisions of foreign companies can form political action committees (PACs) and collect contributions from their American employees."*](https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs)
 
-We will scrape and work with data foreign connected PACs that donate to US political campaigns. The data for foreign connected PAC contributions in the 2022 election cycle can be found at <https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs/2022>. Then, we will use a similar approach to get data such contributions from previous years so that we can examine trends over time.
-
 All data come from [OpenSecrets.org](https://www.opensecrets.org), a *"website tracking the influence of money on U.S. politics, and how that money affects policy and citizens' lives"*.
 
-```{r, eval=FALSE}
-#| label: allow-scraping-opensecrets
-#| warning: false
-#| message: false
+```{r allow-scraping-opensecrets, eval=FALSE, warning=FALSE, message=FALSE}
 
-library(robotstxt)
+# allow to scrape this website 
+
 paths_allowed("https://www.opensecrets.org")
 
 base_url <- "https://www.opensecrets.org/political-action-committees-pacs/foreign-connected-pacs/2022"
 
 contributions_tables <- base_url %>%
-  read_html() 
+  read_html() %>% 
+  
+# scrape all tables on the page
+  html_nodes(css="table") %>% 
+# Turn tables into a dataframe
+  html_table() 
 
+# we only want the first table 
+# and clean names into _ (snake_case) format 
+contributions <- contributions_tables[[1]] %>% 
+  janitor::clean_names()
+
+# output the table 
+contributions
 ```
 
 -   First, make sure you can scrape the data for 2022. Use janitor::clean_names() to rename variables scraped using `snake_case` naming.
