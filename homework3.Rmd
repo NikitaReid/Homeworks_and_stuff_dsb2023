@@ -65,7 +65,7 @@ DBI::dbListTables(sky_westminster)
 
 Which MP has received the most amount of money? Theresa May.
 
-```{r mp-most-money}
+```{r mp-most-money, warning=FALSE}
  
 # set up database objects with dplyr for payments, members
 # rename id column in members so we have a common member_id column to join the two tables by
@@ -266,7 +266,7 @@ party_table %>%
 # graph image reproduced 
 ```
 
-```{r prettier-graph, message=FALSE}
+```{r prettier-graph, message=FALSE, fig.width=14, fig.height=10}
 
 # the same as above using some facetting to make things prettier (maybe?)
 
@@ -315,9 +315,8 @@ We will be using a data set with [anonymous Covid-19 patient data that the CDC p
 
 ```{r covid-data, echo=FALSE, message=FALSE, warning=FALSE}
 
-tic() # start timer
 cdc_data <- open_dataset(here::here("data", "cdc-covid-geography"))
-toc() # stop timer
+
 
 ```
 
@@ -382,7 +381,7 @@ cdc_data %>%
 
 Now Plot Case Fatality Ratio (CFR) over time:
 
-```{r covid-cfr-plot-2}
+```{r covid-cfr-plot-2, fig.width=14, fig.height=10}
   
 # filter out all missing and unknown data responses 
 cdc_data %>% 
@@ -449,7 +448,7 @@ urban_rural <- read_xlsx(here::here("data", "NCHSURCodes2013.xlsx")) %>%
 
 ```
 
-```{r cfr-plot-3, message=FALSE, warning=FALSE}
+```{r cfr-plot-3, message=FALSE, warning=FALSE, fig.width=14, fig.height=10}
 
 # select columns we need 
 # filter out all missing and unknown data responses 
@@ -534,7 +533,7 @@ cdc_urban_rural %>%
 
 Case Fatality ratio (CFR) in urban and rural areas:
 
-```{r cfr-plot-4, message=FALSE, warning=FALSE}
+```{r cfr-plot-4, message=FALSE, warning=FALSE, fig.width=14, fig.height=10}
 
 # use cdc urban rural tibble and remove missing values 
 cdc_urban_rural %>% 
@@ -585,7 +584,7 @@ All data come from [OpenSecrets.org](https://www.opensecrets.org), a *"website t
 
 -   First, make sure you can scrape the data for 2022:
 
-```{r allow-scraping-opensecrets, eval=FALSE, warning=FALSE, message=FALSE}
+```{r allow-scraping-opensecrets, warning=FALSE, message=FALSE}
 
 # is it ok to scrape?
 
@@ -610,7 +609,7 @@ contributions <- contributions_tables[[1]] %>%
 
 -   Clean the data:
 
-```{r parse-currency, eval=FALSE}
+```{r parse-currency}
 # write a function to converts amounts to numeric values 
 parse_currency <- function(x){
   x %>%
@@ -642,7 +641,7 @@ contributions <- contributions %>%
 
 -   Write a function called scrape_pac() :
 
-```{r scrape-pac, eval=FALSE}
+```{r scrape-pac}
 
 # define scrape_pac function for given year 
 scrape_pac <- function(year) {
@@ -745,7 +744,7 @@ paths_allowed("https://www.consultancy.uk")
 
 -   Write a function called `scrape_jobs()` that scrapes information from the webpage for consulting positions:
 
-```{r scrape-jobs, eval=FALSE}
+```{r scrape-jobs}
 
 # define scrape_jobs function for given page 
 scrape_jobs <- function(page) {
