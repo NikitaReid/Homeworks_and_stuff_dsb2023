@@ -437,32 +437,134 @@ cdc_data %>%
 
 ```
 
-For each patient, the data frame also lists the patient's states and county [FIPS code](https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code). The CDC also has information on the [NCHS Urban-Rural classification scheme for counties](https://www.cdc.gov/nchs/data_access/urban_rural.htm)
+Case Fatality ratio (CFR) in different counties, according to their population:
 
-```{r}
+```{r urban-rural-data}
+
+# load urban/rural data 
+
 urban_rural <- read_xlsx(here::here("data", "NCHSURCodes2013.xlsx")) %>% 
   janitor::clean_names() 
+
+
 ```
 
-Each county belongs in seix diffent categoreis, with categories 1-4 being urban areas and categories 5-6 being rural, according to the following criteria captured in `x2013_code`
+```{r cfr-plot-3}
 
-Category name
+# first rename fips code column to have same column name to join two tables by 
+# and change the dbl into an int format to have same format to join by 
+urban_rural_new <- urban_rural %>% 
+  mutate(fips_code_new = as.integer(fips_code)) %>% 
+  rename(county_fips_code = fips_code_new) 
+  
+# join cdc_data and urban_rural data by county fips code 
+cdc_urban_rural <- left_join(x = cdc_data, y = urban_rural_new,
+                             by = "county_fips_code")
 
-1.  Large central metro - 1 million or more population and contains the entire population of the largest principal city
-2.  large fringe metro - 1 million or more poulation, but does not qualify as 1
-3.  Medium metro - 250K - 1 million population
-4.  Small metropolitan population \< 250K
-5.  Micropolitan
-6.  Noncore
+# filter out all missing and unknown data responses 
+# group by case date and the 2013 code (1 - 6 scale), and death y/n 
+cdc_urban_rural %>%
+  filter(death_yn != "Unknown" & death_yn != "Missing") %>% 
+  filter(case_month!="2020-01" & case_month!="2020-02") %>% 
+  group_by(case_month, x2013_code,death_yn) %>% 
+  
+# calculate number and % of deaths for each group 
+# collect data into R and remove missing values
+  summarize(number_death = n()) %>% 
+  collect() %>% 
+  drop_na(case_month,death_yn,x2013_code) %>% 
+  mutate(percentage=number_death/sum(number_death)) %>% 
+  
+# plot only those who died for the CFR % points 
+  filter(death_yn =="Yes") %>% 
+  
+# create column to fix facet wrap labels 
+  mutate(code_reformatted = case_when(x2013_code=="1" ~ "1. Large central metro",
+                                     x2013_code=="2" ~"2. Large fringe metro", 
+                                    x2013_code== "3" ~"3. Medium metro",
+                                     x2013_code=="4" ~"4. Small metropolitan",
+                                     x2013_code=="5" ~"5. Micropolitan",
+                                     x2013_code=="6" ~"6. Noncore")) %>% 
+  
+# plot lines for CFR % each month 
+  ggplot(aes(x = case_month, y =percentage, group=code_reformatted,
+             color= code_reformatted)) +
+  geom_line() +
+  
+# facet wrap of county type with three rows as in image 
+  facet_wrap(~code_reformatted, scales = "free_y", nrow = 3) + 
+               
+# replicate theme and labels from example picture (include caption, remove axes)
+# vertcally orientate x axis date labels 
+  theme_light() +
+  theme(axis.text.x=element_text(angle=90,hjust=3,vjust=0.5)) +
+  
+  labs(x="",y="", caption = "Source: CDC",
+       title="Covid CFR % by county population") +
 
-Can you query the database, extract the relevant information, and reproduce the following two graphs that look at the Case Fatality ratio (CFR) in different counties, according to their population?
+# fix y-axis into % labels as in example image 
+  scale_y_continuous(labels=scales::percent) + 
 
-```{r echo=FALSE, out.width="100%"}
-knitr::include_graphics(here::here("images", "cfr-county-population.png"), error = FALSE)
+# add the CFR% text to points, rounded with 1 decimal place
+  geom_text(aes(label=(sprintf("%0.1f",percentage*100))), size=3) +
+  
+# no legend 
+  guides(color="none") 
+
+# figure reproduced
+
 ```
 
-```{r echo=FALSE, out.width="100%"}
-knitr::include_graphics(here::here("images", "cfr-rural-urban.png"), error = FALSE)
+```{r cfr-plot-4}
+
+# filter out all missing and unknown data responses 
+# group by case date and urban/rural, and death y/n 
+cdc_urban_rural %>%
+  filter(death_yn != "Unknown" & death_yn != "Missing") %>% 
+  filter(case_month!="2020-01") %>% 
+  mutate(code_urban_rural = case_when(x2013_code==1 ~"Urban",
+                                     x2013_code==2 ~"Urban", 
+                                    x2013_code==3 ~"Urban",
+                                     x2013_code==4 ~"Urban",
+                                     x2013_code==5 ~"Rural",
+                                     x2013_code==6 ~"Rural")) %>% 
+  group_by(death_yn,code_urban_rural, case_month) %>% 
+  
+# calculate number and % of deaths for each group 
+# collect data into R and remove missing values
+  summarize(number_death = n()) %>% 
+  collect() %>% 
+  drop_na(code_urban_rural,case_month,death_yn) %>% 
+  mutate(percentage=number_death/sum(number_death)) %>% 
+  
+# plot only those who died for the CFR % points 
+  filter(death_yn =="Yes") %>% 
+  
+# create column to fix facet wrap labels 
+
+  
+# plot lines for CFR % each month 
+  ggplot(aes(x = case_month, y =percentage, group=code_urban_rural,
+             color= code_urban_rural)) +
+  geom_line() + 
+               
+# replicate theme and labels from example picture (include caption, remove axes)
+# vertcally orientate x axis date labels 
+  theme_light() +
+  theme(axis.text.x=element_text(angle=90,hjust=3,vjust=0.5)) +
+  
+  labs(x="",y="", caption = "Source: CDC", color="Counties",
+       title="Covid CFR % by rural and urban areas") +
+
+# fix y-axis into % labels as in example image 
+  scale_y_continuous(labels=scales::percent) + 
+
+# add the CFR% text to points, rounded with 1 decimal place
+  geom_text(aes(label=(sprintf("%0.1f",percentage*100))), 
+            size=3, color="black") 
+  
+
+# figure reproduced
 ```
 
 # Money in US politics
@@ -581,5 +683,3 @@ url <- str_c(base_url, page)
 -   Map the `scrape_jobs()` function over `pages` in a way that will result in a data frame called `all_consulting_jobs`.
 
 -   Write the data frame to a csv file called `all_consulting_jobs.csv` in the `data` folder.
-
-***ASK KOSTIS ABOUT WORD VS HTML AND DISCREPANCY IN Q1 PAYMENTS VS DONATIONS AND GRAPH SIMPLIFY***
