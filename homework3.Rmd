@@ -767,7 +767,7 @@ tables <- url %>%
   html_table() 
   
 # We only want first table 
-jobs <-  tables[[1]]  
+jobs <-  tables[[1]] 
 
     return(jobs) }
 ```
@@ -797,5 +797,15 @@ all_consulting_jobs <- map_df(pages, scrape_jobs)
 
 # write data frame to csv file in data folder 
 write.csv(all_consulting_jobs, "data/all_consulting_jobs.csv")
+
+# for fun let's investigate which firm has the most open jobs 
+# group by firm 
+all_consulting_jobs %>% 
+  group_by(Firm) %>% 
+  
+# calculate number of job openings and arrange largest at the top
+  count() %>% 
+  summarise(total_job_openings=n) %>% 
+  arrange(desc(total_job_openings))
 
 ```
