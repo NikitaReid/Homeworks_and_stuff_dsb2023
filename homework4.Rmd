@@ -490,8 +490,7 @@ movie_rec
 
 # Define different models to fit
 
-```{r model_building}
-
+```{r model_building, message=FALSE}
 
 # Pick a `model type`
 # set the `engine`
@@ -541,7 +540,8 @@ knn_spec <-
 
 # Bundle recipe and model with `workflows`
 
-```{r}
+```{r workflows}
+
 log_wflow <- # new workflow object
  workflow() %>% # use workflow function
  add_recipe(movie_rec) %>%   # use the new recipe
@@ -551,7 +551,7 @@ log_wflow <- # new workflow object
 log_wflow
 
 
-## A few more workflows
+# workflows for the other four models 
 
 tree_wflow <-
  workflow() %>%
@@ -575,11 +575,17 @@ knn_wflow <-
 
 ```
 
-HEADS UP
-
 1.  How many models have you specified?
+
+    Specified above are five different models of type: logistic regression, decision tree, random forest, boosted tree and K-nearest neighbors.
+
 2.  What's the difference between a model specification and a workflow?
+
+    A model specification is simply the specification of a parsnip model that contains the model type, engine and mode. A workflow object is a combination of a pre-processor (here our 6 step recipe) and a parsnip model specification (here any one of our five models we specified above).
+
 3.  Do you need to add a formula (e.g., `test ~ .`) if you have a recipe?
+
+    No. The recipe pre-processor already incorporates these formulas.
 
 # Model Comparison
 
