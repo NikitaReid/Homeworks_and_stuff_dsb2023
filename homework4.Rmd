@@ -169,7 +169,7 @@ bechdel %>%
 
 In the below scatter plot, blue corresponds to passing the Bechdel test and pink corresponds to failing it. More films fail the Bechdel test than pass it. There is no large difference between films that pass or fail the test and their budgets or ratings except that as a general rule, budget and box office take medians seem to be slightly larger for films that fail the Bechdel test but not by much. The reason for this is unclear. Budgets and grosses are quite skewed distributions towards lower values, with a long tail of a few high budget films. This makes sense as most movies do not have large budgets and budgets tend to be highly positively correlated to box office grosses as well (we see this here with budget variable having a correlation of roughly +0.52 and +0.62 with domestic gross and international gross respectively). Domestic and international gross are also extremely positively correlated here (\~ +0.94). Ratings are fairly normally distributed, which makes sense as one would expect the bulk of films to be about average in quality and mass appeal. Ratings are in no way affected by whether the Bechdel test is passed or failed. Ratings (both ratings variables) have no correlation to budget, weakly positive correlation to gross (international and domestic) and imdb rating and metascore have a very high correlation to each other of \~ +0.74, as one would expect. Correlations between any of the other variables do not seem to be much affected by whether a film passes or fails the Bechdel test.
 
-```{r correlations, warning=FALSE, message=FALSE}
+```{r correlations, warning=FALSE, message=FALSE, fig.height=8, fig.width=12}
 bechdel %>% 
   
 # select desired variable columns 
@@ -182,15 +182,21 @@ bechdel %>%
 
 ### Categorical variables
 
-Write a paragraph discussing the output of the following
+Below we see that musicals always pass the Bechdel test, and horror movies frequently pass them (about 70% of the time). This makes sense as these genres tend to incorporate many themes and do not tend to focus only on men or women discussing men. Crime, action and adventure films rarely pass the Bechdel test. These genres often tend to focus more on male characters and so this would make sense. Comedies, biographies and dramas have about equal shares of passing/failing which also makes sense.
 
-```{r}
+There does not seem to be much of a relationship between age rating of films and whether or not they pass the Bechdel test with all respective proportions being about 50/50 or at worst 60/40 which is similar to the overall proportions of films failing/passing the test. Only the NC-17 age category stands out with very few films passing the test, however there are only 6 films in this category in total for this sample data set and so we probably cannot draw any conclusions with such a small sample.
+
+```{r genres_and_test, message=FALSE, warning=FALSE}
+
+# group by genre / Bechdel test 
+# count number and proportion of films that pass/ fail the test for every genre 
 bechdel %>% 
   group_by(genre, test) %>%
   summarise(n = n()) %>% 
   mutate(prop = n/sum(n))
   
- 
+# group by age rating / Bechdel test 
+# count number and proportion of films that pass/ fail the test for every age rating  
 bechdel %>% 
   group_by(rated, test) %>%
   summarise(n = n()) %>% 
