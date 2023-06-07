@@ -31,28 +31,38 @@ library(vip)
 
 # The Bechdel Test
 
-<https://fivethirtyeight.com/features/the-dollar-and-cents-case-against-hollywoods-exclusion-of-women/>
-
-The [Bechdel test](https://bechdeltest.com) is a way to assess how women are depicted in Hollywood movies. In order for a movie to pass the test:
+The [Bechdel test](https://bechdeltest.com) is a way to assess how women are depicted in Hollywood movies. For a movie to pass the test:
 
 1.  It has to have at least two [named] women in it
 2.  Who talk to each other
 3.  About something besides a man
 
-There is a nice article and analysis you can find here <https://fivethirtyeight.com/features/the-dollar-and-cents-case-against-hollywoods-exclusion-of-women/> We have a sample of 1394 movies and we want to fit a model to predict whether a film passes the test or not.
+We have a sample of 1394 movies and we want to fit a model to predict whether a film passes the test or not.
 
 ```{r read_data}
 
-bechdel <- read_csv(here::here("data", "bechdel.csv")) %>% 
+# load data and avoid a messy output 
+bechdel <- read_csv(here::here("data", "bechdel.csv"),
+                    show_col_types = FALSE) %>% 
+  
+# turn "test" into a factor variable 
   mutate(test = factor(test)) 
+
+# look at the data set 
 glimpse(bechdel)
 
 ```
 
 How many films fail/pass the test, both as a number and as a %?
 
-```{r}
+```{r pass_the_test}
 
+bechdel %>% 
+# count how many films pass/fail the test
+  count(test) %>% 
+  
+# create column to calculate % for pass/fail 
+  mutate(percentage = n/sum(n)*100)
 ```
 
 ## Movie scores
