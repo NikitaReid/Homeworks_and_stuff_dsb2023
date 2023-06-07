@@ -137,7 +137,7 @@ bechdel_test %>%
 
 ## Feature exploration
 
-## Any outliers?
+### Any outliers?
 
 ```{r}
 
@@ -158,7 +158,7 @@ bechdel %>%
 
 ```
 
-## Scatterplot - Correlation Matrix
+### Scatterplot - Correlation Matrix
 
 Write a paragraph discussing the output of the following
 
@@ -169,7 +169,7 @@ bechdel %>%
   theme_bw()
 ```
 
-## Categorical variables
+### Categorical variables
 
 Write a paragraph discussing the output of the following
 
@@ -373,7 +373,7 @@ movie_rec <-
   recipe(test ~ .,
          data = bechdel_train) %>%
   
-  # Genres with less than 5% will be in a catewgory 'Other'
+  # Genres with less than 5% will be in a category 'Other'
     step_other(genre, threshold = .03) 
 ```
 
