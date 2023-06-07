@@ -468,7 +468,7 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
   
 ```
 
--    step_normalize() centers then scales numeric variable (mean = 0, sd = 1) :
+-   step_normalize() centers then scales numeric variable (mean = 0, sd = 1) :
 
 ```{r step_normalize}
 movie_rec <- recipe(test ~ ., data = bechdel) %>%
@@ -597,8 +597,154 @@ knn_wflow <-
 
 # Model Comparison
 
-You now have all your models. Adapt the code from slides `code-from-slides-CA-housing.R`, line 400 onwards to assess which model gives you the best classification.
+Let us now assess the predictive performance of our five models:
+
+```{r evaluate_models}
+
+# Logistic regression workflow results
+# resample over our ten folds 
+# pick performance metrics to display 
+
+log_res <- log_wflow %>% 
+  fit_resamples(resamples = bechdel_folds, 
+                metrics = metric_set(recall, precision, f_meas, accuracy,
+                                     kap, roc_auc, sens, spec), 
+                control = control_resamples(save_pred = TRUE)) 
+
+
+# Decision tree
+
+tree_res <- tree_wflow %>% 
+  fit_resamples(resamples = bechdel_folds, 
+                metrics = metric_set(recall, precision, f_meas, accuracy, 
+                                     kap, roc_auc, sens, spec),
+                control = control_resamples(save_pred = TRUE)) 
+
+
+# Random Forest
+
+rf_res <- rf_wflow %>% 
+  fit_resamples(resamples = bechdel_folds, 
+                metrics = metric_set(recall, precision, f_meas, accuracy,
+                                     kap, roc_auc, sens, spec),
+                control = control_resamples(save_pred = TRUE)) 
+
+
+# Boosted tree - XGBoost
+
+xgb_res <- xgb_wflow %>% 
+  fit_resamples(resamples = bechdel_folds, 
+                metrics = metric_set(recall, precision, f_meas, accuracy,
+                                     kap, roc_auc, sens, spec),
+                control = control_resamples(save_pred = TRUE)) 
+
+
+# K-nearest neighbour
+
+knn_res <- knn_wflow %>% 
+  fit_resamples(resamples = bechdel_folds, 
+                metrics = metric_set(recall, precision, f_meas, accuracy, 
+                                     kap, roc_auc, sens, spec),
+                control = control_resamples(save_pred = TRUE)) 
+
+
+# Model Comparison
+
+log_metrics <- log_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  # add the name of the model to every row
+  mutate(model = "Logistic Regression") 
+
+tree_metrics <- tree_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  mutate(model = "Decision Tree")
+
+rf_metrics <- rf_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  mutate(model = "Random Forest")
+
+xgb_metrics <- xgb_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  mutate(model = "XGBoost")
+
+knn_metrics <- knn_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  mutate(model = "Knn")
+
+# create dataframe with all models
+model_compare <- bind_rows(log_metrics,
+                           tree_metrics,
+                           rf_metrics,
+                           xgb_metrics,
+                           knn_metrics) 
+
+#Pivot wider to create barplot
+model_comp <- model_compare %>% 
+  select(model, .metric, mean, std_err) %>% 
+  pivot_wider(names_from = .metric, values_from = c(mean, std_err))
+  
+```
 
 ```{r}
+
+# show mean are under the curve (ROC-AUC) for every model
+model_comp %>% 
+  arrange(mean_roc_auc) %>% 
+  mutate(model = fct_reorder(model, mean_roc_auc)) %>% # order results
+  ggplot(aes(model, mean_roc_auc, fill=model)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_brewer(palette = "Blues") +
+   geom_text(
+     size = 3,
+     aes(label = round(mean_roc_auc, 2), 
+         y = mean_roc_auc + 0.08),
+     vjust = 1
+  )+
+  theme_light()+
+  theme(legend.position = "none")+
+  labs(y = NULL)
+
+## `last_fit()` on test set
+
+# - `last_fit()`  fits a model to the whole training data and evaluates it on the test set. 
+# - provide the workflow object of the best model as well as the data split object (not the training data). 
+ 
+last_fit_xgb <- last_fit(xgb_wflow, 
+                        split = data_split,
+                        metrics = metric_set(
+                          accuracy, f_meas, kap, precision,
+                          recall, roc_auc, sens, spec))
+
+last_fit_xgb %>% collect_metrics(summarize = TRUE)
+
+#Compare to training
+xgb_res %>% collect_metrics(summarize = TRUE)
+
+
+## Variable importance using `{vip}` package
+
+library(vip)
+
+last_fit_xgb %>% 
+  pluck(".workflow", 1) %>%   
+  pull_workflow_fit() %>% 
+  vip(num_features = 10) +
+  theme_light()
+
+
+## Final Confusion Matrix
+
+last_fit_xgb %>%
+  collect_predictions() %>% 
+  conf_mat(price_category, .pred_class) %>% 
+  autoplot(type = "heatmap")
+
+
+## Final ROC curve
+last_fit_xgb %>% 
+  collect_predictions() %>% 
+  roc_curve(price_category, .pred_above) %>% 
+  autoplot()
 
 ```
