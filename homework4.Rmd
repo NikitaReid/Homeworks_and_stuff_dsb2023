@@ -302,6 +302,7 @@ plot(draw_tree)
 The code below return the IDs of the 10 folds we created (10 random splits of the data set each containing roughly equal proportions of pass/fail results for the test variable).
 
 ```{r vfolds, message=FALSE, warning=FALSE}
+
 set.seed(123)
 bechdel_folds <- vfold_cv(data = bechdel_train, 
                           v = 10, 
@@ -366,27 +367,14 @@ What we learn here after training and testing the initial logistic regression an
 
 # Build a better training set with `recipes`
 
-## Preprocessing options
-
--   Encode categorical predictors
--   Center and scale variables
--   Handle class imbalance
--   Impute missing data
--   Perform dimensionality reduction
--   ... ...
-
-## To build a recipe
-
-1.  Start the `recipe()`
-2.  Define the variables involved
-3.  Describe **prep**rocessing [step-by-step]
-
 ## Collapse Some Categorical Levels
 
-Do we have any `genre` with few observations? Assign genres that have less than 3% to a new category 'Other'
+Do we have any `genre` with few observations? Assign genres that have less than 3% to a new category 'Other'. We do: Mystery, Fantasy, Sci-Fi, Thriller, Documentary, Musical.
 
-```{r}
-#| echo = FALSE
+```{r genre-plot}
+
+# plot number of films in each genre 
+# reorder with largest bar on top (highest number of films)
 bechdel %>% 
   count(genre) %>% 
   mutate(genre = fct_reorder(genre, n)) %>% 
@@ -397,40 +385,44 @@ bechdel %>%
   labs(x = NULL) +
   geom_hline(yintercept = (nrow(bechdel_train)*.03), lty = 3)+
   theme_light()
+
 ```
 
-```{r}
+```{r collapse-categories}
+
 movie_rec <-
   recipe(test ~ .,
          data = bechdel_train) %>%
   
-  # Genres with less than 5% will be in a category 'Other'
+# Genres with less than 3% will be in a category 'Other'
     step_other(genre, threshold = .03) 
+
 ```
 
-## Before recipe
+Before recipe:
 
-```{r}
-#| echo = FALSE
+```{r before-recipe}
+
 bechdel_train %>% 
   count(genre, sort = TRUE)
+
 ```
 
-## After recipe
+After recipe (small categories collapsed to "other") :
 
-```{r}
+```{r after-recipe}
+
 movie_rec %>% 
   prep() %>% 
   bake(new_data = bechdel_train) %>% 
   count(genre, sort = TRUE)
+
 ```
 
-## `step_dummy()`
+Converts nominal data into numeric dummy variables using step_dummy() :
 
-Converts nominal data into numeric dummy variables
+```{r step_dummy,  results='hide' , message=FALSE}
 
-```{r}
-#| results = "hide"
 movie_rec <- recipe(test ~ ., data = bechdel) %>%
   step_other(genre, threshold = .03) %>% 
   step_dummy(all_nominal_predictors()) 
@@ -442,14 +434,12 @@ movie_rec
 
 What if there were no films with `rated` NC-17 in the training data?
 
--   Will the model have a coefficient for `rated` NC-17?
--   What will happen if the test data includes a film with `rated` NC-17?
+-   Will the model have a coefficient for `rated` NC-17? No!
+-   What will happen if the test data includes a film with `rated` NC-17? It will not know what to do!
 
-## `step_novel()`
+Soltuion: step_novel() adds a catch-all level to a factor for any new values not encountered in model training, which lets R intelligently predict new levels in the test set.
 
-Adds a catch-all level to a factor for any new values not encountered in model training, which lets R intelligently predict new levels in the test set.
-
-```{r}
+```{r step_novel}
 
 movie_rec <- recipe(test ~ ., data = bechdel) %>%
   step_other(genre, threshold = .03) %>% 
@@ -458,11 +448,10 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
 
 ```
 
-## `step_zv()`
+step_zv() Intelligently handles zero variance variables (variables that contain only a single value) :
 
-Intelligently handles zero variance variables (variables that contain only a single value)
+```{r step_zv}
 
-```{r}
 movie_rec <- recipe(test ~ ., data = bechdel) %>%
   step_other(genre, threshold = .03) %>% 
   step_novel(all_nominal(), -all_outcomes()) %>% # Use *before* `step_dummy()` so new level is dummified
@@ -471,11 +460,9 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
   
 ```
 
-## `step_normalize()`
+step_normalize() centers then scales numeric variable (mean = 0, sd = 1) :
 
-Centers then scales numeric variable (mean = 0, sd = 1)
-
-```{r}
+```{r step_normalize}
 movie_rec <- recipe(test ~ ., data = bechdel) %>%
   step_other(genre, threshold = .03) %>% 
   step_novel(all_nominal(), -all_outcomes()) %>% # Use *before* `step_dummy()` so new level is dummified
@@ -485,11 +472,10 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
 
 ```
 
-## `step_corr()`
+Lastly, step_corr() removes highly correlated variables:
 
-Removes highly correlated variables
+```{r step_corr, message=FALSE}
 
-```{r}
 movie_rec <- recipe(test ~ ., data = bechdel) %>%
   step_other(genre, threshold = .03) %>% 
   step_novel(all_nominal(), -all_outcomes()) %>% # Use *before* `step_dummy()` so new level is dummified
@@ -498,19 +484,20 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
   step_normalize(all_numeric()) %>% 
   step_corr(all_predictors(), threshold = 0.75, method = "spearman") 
 
-
-
 movie_rec
+
 ```
 
 # Define different models to fit
 
-```{r}
-## Model Building
+```{r model_building}
 
-# 1. Pick a `model type`
-# 2. set the `engine`
-# 3. Set the `mode`: regression or classification
+
+# Pick a `model type`
+# set the `engine`
+# Set the `mode`: regression or classification
+# we do this for five different model types below 
+# and use only classification mode
 
 # Logistic regression
 log_spec <-  logistic_reg() %>%  # model type
@@ -549,6 +536,7 @@ knn_spec <-
   nearest_neighbor(neighbors = 4) %>% # we can adjust the number of neighbors 
   set_engine("kknn") %>% 
   set_mode("classification") 
+
 ```
 
 # Bundle recipe and model with `workflows`
