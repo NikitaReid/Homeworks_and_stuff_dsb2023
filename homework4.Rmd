@@ -139,18 +139,25 @@ bechdel_test %>%
 
 ### Any outliers?
 
-```{r}
+There are no "unusual" or "impossible" outliers to speak of. There are some very low film ratings as seen below for metascore and imdb rating. However, this probably just means they were bad movies. Similarly, there are some movies with very high budgets/ box office grosses but this is also reasonable to expect. As a basic sanity check, budget outlier values \< domestic gross outlier values \< international gross outlier values, as expected. So, none of these outliers appear to be problematic.
 
+```{r outliers}
+
+# select desired columns and pivot longer to put all variables in one column 
+# and their values in another 
 bechdel %>% 
   select(test, budget_2013, domgross_2013, intgross_2013, imdb_rating, metascore) %>% 
 
     pivot_longer(cols = 2:6,
                names_to = "feature",
                values_to = "value") %>% 
+# plot boxplot of all features/variables to check for outlier values 
   ggplot()+
   aes(x=test, y = value, fill = test)+
   coord_flip()+
   geom_boxplot()+
+
+# split plots by feature 
   facet_wrap(~feature, scales = "free")+
   theme_bw()+
   theme(legend.position = "none")+
@@ -158,12 +165,16 @@ bechdel %>%
 
 ```
 
-### Scatterplot - Correlation Matrix
+### Scatter plot - Correlation Matrix
 
-Write a paragraph discussing the output of the following
+In the below scatter plot, blue corresponds to passing the Bechdel test and pink corresponds to failing it. More films fail the Bechdel test than pass it. There is no large difference between films that pass or fail the test and their budgets or ratings except that as a general rule, budget and box office take medians seem to be slightly larger for films that fail the Bechdel test but not by much. The reason for this is unclear. Budgets and grosses are quite skewed distributions towards lower values, with a long tail of a few high budget films. This makes sense as most movies do not have large budgets and budgets tend to be highly positively correlated to box office grosses as well (we see this here with budget variable having a correlation of roughly +0.52 and +0.62 with domestic gross and international gross respectively). Domestic and international gross are also extremely positively correlated here (\~ +0.94). Ratings are fairly normally distributed, which makes sense as one would expect the bulk of films to be about average in quality and mass appeal. Ratings are in no way affected by whether the Bechdel test is passed or failed. Ratings (both ratings variables) have no correlation to budget, weakly positive correlation to gross (international and domestic) and imdb rating and metascore have a very high correlation to each other of \~ +0.74, as one would expect. Correlations between any of the other variables do not seem to be much affected by whether a film passes or fails the Bechdel test.
 
-```{r, warning=FALSE, message=FALSE}
+```{r correlations, warning=FALSE, message=FALSE}
 bechdel %>% 
+  
+# select desired variable columns 
+# plot scatterplot of variable correlations using ggpairs 
+  
   select(test, budget_2013, domgross_2013, intgross_2013, imdb_rating, metascore)%>% 
   ggpairs(aes(colour=test), alpha=0.2)+
   theme_bw()
