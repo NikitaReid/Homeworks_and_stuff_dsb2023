@@ -205,14 +205,16 @@ bechdel %>%
 
 # Train first models. `test ~ metascore + imdb_rating`
 
-```{r}
+```{r setting_models}
+
+# regression model with classifaction mode 
 lr_mod <- logistic_reg() %>% 
   set_engine(engine = "glm") %>% 
   set_mode("classification")
 
 lr_mod
 
-
+# decision tree model with classification mode 
 tree_mod <- decision_tree() %>% 
   set_engine(engine = "C5.0") %>% 
   set_mode("classification")
@@ -220,7 +222,7 @@ tree_mod <- decision_tree() %>%
 tree_mod 
 ```
 
-```{r}
+```{r fitting_models}
 
 
 lr_fit <- lr_mod %>% # parsnip model
@@ -236,7 +238,8 @@ tree_fit <- tree_mod %>% # parsnip model
 
 ## Logistic regression
 
-```{r}
+```{r fit-logistic}
+
 lr_fit %>%
   broom::tidy()
 
@@ -248,37 +251,45 @@ lr_preds <- lr_fit %>%
 
 ### Confusion matrix
 
-```{r}
+```{r confusion_logistic}
+
 lr_preds %>% 
   conf_mat(truth = test, estimate = .pred_class) %>% 
   autoplot(type = "heatmap")
 
-
 ```
+
+137 false positives, 328 false negatives (almost double the number of true positives). This model makes bad predictions ....
 
 ## Decision Tree
 
-```{r}
+```{r fit-tree}
+
 tree_preds <- tree_fit %>%
   augment(new_data = bechdel) %>%
   mutate(.pred_match = if_else(test == .pred_class, 1, 0)) 
 
-
 ```
 
-```{r}
+```{r confusion-tree}
+
 tree_preds %>% 
   conf_mat(truth = test, estimate = .pred_class) %>% 
   autoplot(type = "heatmap")
+
 ```
+
+189 false positives, 397 false negatives (almost double the number of true positives). This model also makes bad predictions ....
 
 ## Draw the decision tree
 
-```{r}
+```{r draw-tree, fig.height=16, fig.width=18}
+
+# draw our fitted decision tree 
 draw_tree <- 
     rpart::rpart(
         test ~ metascore + imdb_rating,
-        data = bechdel_train, # uses data that contains both birth weight and `low`
+        data = bechdel_train, 
         control = rpart::rpart.control(maxdepth = 5, cp = 0, minsplit = 10)
     ) %>% 
     partykit::as.party()
@@ -288,9 +299,9 @@ plot(draw_tree)
 
 # Cross Validation
 
-Run the code below. What does it return?
+The code below return the IDs of the 10 folds we created (10 random splits of the data set each containing roughly equal proportions of pass/fail results for the test variable).
 
-```{r}
+```{r vfolds, message=FALSE, warning=FALSE}
 set.seed(123)
 bechdel_folds <- vfold_cv(data = bechdel_train, 
                           v = 10, 
@@ -298,11 +309,13 @@ bechdel_folds <- vfold_cv(data = bechdel_train,
 bechdel_folds
 ```
 
-## `fit_resamples()`
+Train and test a resampled model:
 
-Trains and tests a resampled model.
+```{r resamples}
 
-```{r}
+# resample the data using fit_resamples
+# training the two models using the ten folds we created 
+
 lr_fit <- lr_mod %>%
   fit_resamples(
     test ~ metascore + imdb_rating,
@@ -317,11 +330,9 @@ tree_fit <- tree_mod %>%
   )
 ```
 
-## `collect_metrics()`
+Unnest the metrics column - how accurately does the model predict whether test is passed? :
 
-Unnest the metrics column from a tidymodels `fit_resamples()`
-
-```{r}
+```{r collect_metrics}
 
 collect_metrics(lr_fit)
 collect_metrics(tree_fit)
@@ -329,7 +340,8 @@ collect_metrics(tree_fit)
 
 ```
 
-```{r}
+```{r test_the_models}
+
 tree_preds <- tree_mod %>% 
   fit_resamples(
     test ~ metascore + imdb_rating, 
@@ -349,6 +361,8 @@ tree_preds %>%
   autoplot()
 
 ```
+
+What we learn here after training and testing the initial logistic regression and decision tree models and using 10 v_folds for resampling is that both models predict the test outcome correctly roughly 50-60% of the time (see area under ROC curves metrics and ROC curve plotted for decision tree above). This is terrible! We might as well flip a coin...
 
 # Build a better training set with `recipes`
 
