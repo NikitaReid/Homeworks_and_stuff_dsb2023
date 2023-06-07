@@ -27,6 +27,7 @@ library(rpart.plot)
 library(here)
 library(scales)
 library(vip)
+
 ```
 
 # The Bechdel Test
@@ -63,6 +64,7 @@ bechdel %>%
   
 # create column to calculate % for pass/fail 
   mutate(percentage = n/sum(n)*100)
+
 ```
 
 ## Movie scores
@@ -88,27 +90,49 @@ ggplot(data = bechdel, aes(
     colour = "Bechdel test"
   ) +
  theme_light()
+
 ```
 
 # Split the data
 
-```{r}
-# **Split the data**
+```{r split_data}
 
 set.seed(123)
+
+# 80% of data for training , 20% for testing 
+# make sure equal proportions of pass/fail test in each group 
 
 data_split <- initial_split(bechdel, # updated data
                            prop = 0.8, 
                            strata = test)
 
+# split the data
+
 bechdel_train <- training(data_split) 
 bechdel_test <- testing(data_split)
 ```
 
-Check the counts and % (proportions) of the `test` variable in each set.
+Check the counts and % proportions of the `test` variable in each set. We have pretty much equal proportions of pass/fail the test in each of the two sets (training/testing). This is good!
 
-```{r}
+```{r checking_proportions}
 
+# first check the training set 
+bechdel_train %>% 
+  
+# count how many films pass/fail the test
+  count(test) %>% 
+  
+# create column to calculate % for pass/fail 
+  mutate(percentage = n/sum(n)*100)
+
+# now check the testing set 
+bechdel_test %>% 
+  
+# count how many films pass/fail the test
+  count(test) %>% 
+  
+# create column to calculate % for pass/fail 
+  mutate(percentage = n/sum(n)*100)
 ```
 
 ## Feature exploration
