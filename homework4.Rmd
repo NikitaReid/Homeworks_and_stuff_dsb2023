@@ -67,12 +67,19 @@ bechdel %>%
 
 ## Movie scores
 
-```{r}
+The below plot shows the distribution of film ratings by IMDB and Metacritic rating sites and whether these films passed or failed the Bechdel test. There is clearly no relationship between film ratings and whether films pass or fail the Bechdel test.
+
+```{r movie-ratings-plot}
+
+# plot ratings data coloured by passed and failed tests 
 ggplot(data = bechdel, aes(
   x = metascore,
   y = imdb_rating,
   colour = test
 )) +
+  
+# specify some peculiar/fun colours and 
+# add some labels and theme 
   geom_point(alpha = .3, size = 3) +
   scale_colour_manual(values = c("tomato", "olivedrab")) +
   labs(
