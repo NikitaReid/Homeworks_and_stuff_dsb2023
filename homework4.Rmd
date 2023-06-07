@@ -678,7 +678,7 @@ model_compare <- bind_rows(log_metrics,
                            xgb_metrics,
                            knn_metrics) 
 
-#Pivot wider to create barplot
+# Pivot wider to create barplot
 model_comp <- model_compare %>% 
   select(model, .metric, mean, std_err) %>% 
   pivot_wider(names_from = .metric, values_from = c(mean, std_err))
